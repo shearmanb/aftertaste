@@ -1,0 +1,6 @@
+[build]
+buildCommand = "npm run db:migrate && npm run build"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/"

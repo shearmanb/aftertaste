@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0c0a09;
+  --foreground: #e7e5e4;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.input-field {
+  @apply w-full bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-500 text-sm;
+}
+
+/* Safe area for iOS PWA bottom nav */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

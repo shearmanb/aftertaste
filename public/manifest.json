@@ -1,0 +1,22 @@
+{
+  "name": "Aftertaste",
+  "short_name": "Aftertaste",
+  "description": "Personal pour-over coffee tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1c0a00",
+  "theme_color": "#1c0a00",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

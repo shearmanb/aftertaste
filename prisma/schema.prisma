@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Bean {
+  id         String   @id @default(cuid())
+  producer   String
+  name       String
+  country    String?
+  roastLevel String
+  notes      String?
+  createdAt  DateTime @default(now())
+  brews      Brew[]
+}
+
+model GrindProfile {
+  id      String @id @default(cuid())
+  name    String
+  grinder String @default("Fellow Ode Gen 2")
+  setting Float
+  notes   String?
+  brews   Brew[]
+}
+
+model AidenProfile {
+  id          String @id @default(cuid())
+  name        String
+  coffeeG     Float
+  waterG      Float
+  tempF       Int
+  bloomTimeS  Int
+  bloomWaterG Float
+  pours       Json
+  notes       String?
+  brews       Brew[]
+}
+
+model Brew {
+  id             String        @id @default(cuid())
+  brewedAt       DateTime      @default(now())
+  bean           Bean          @relation(fields: [beanId], references: [id])
+  beanId         String
+  grindProfile   GrindProfile  @relation(fields: [grindProfileId], references: [id])
+  grindProfileId String
+  aidenProfile   AidenProfile  @relation(fields: [aidenProfileId], references: [id])
+  aidenProfileId String
+  grindOverride  Float?
+  tempOverride   Int?
+  tastingNote    TastingNote?
+}
+
+model TastingNote {
+  id              String   @id @default(cuid())
+  brew            Brew     @relation(fields: [brewId], references: [id])
+  brewId          String   @unique
+  overallScore    Int
+  fruit           Int
+  bitterness      Int
+  chocolate       Int
+  sourness        Int
+  drinkingTempF   Int?
+  flavorTags      String[]
+  initialThoughts String?
+  wouldBrewAgain  Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}

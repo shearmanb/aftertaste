@@ -84,18 +84,25 @@ export default function NewBrewPage() {
       {step === 2 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select grind profile</p>
-          <div className="space-y-2 mb-6">
-            {grindProfiles.map((gp) => (
-              <button
-                key={gp.id}
-                onClick={() => setSelectedGrind(gp)}
-                className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${selectedGrind?.id === gp.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"}`}
-              >
-                <p className="font-semibold text-stone-100">{gp.name}</p>
-                <p className="text-stone-400 text-sm">Setting {gp.setting}</p>
-              </button>
-            ))}
-          </div>
+          {grindProfiles.length === 0 ? (
+            <div className="text-center py-10 text-stone-500">
+              <p>No grind profiles yet.</p>
+              <a href="/profiles/grind" className="text-amber-500 underline text-sm mt-1 block">Add a grind profile first →</a>
+            </div>
+          ) : (
+            <div className="space-y-2 mb-6">
+              {grindProfiles.map((gp) => (
+                <button
+                  key={gp.id}
+                  onClick={() => setSelectedGrind(gp)}
+                  className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${selectedGrind?.id === gp.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"}`}
+                >
+                  <p className="font-semibold text-stone-100">{gp.name}</p>
+                  <p className="text-stone-400 text-sm">Setting {gp.setting}</p>
+                </button>
+              ))}
+            </div>
+          )}
           {selectedGrind && (
             <div className="mb-4">
               <label className="text-stone-400 text-sm block mb-1">Override grind setting (optional)</label>
@@ -109,13 +116,15 @@ export default function NewBrewPage() {
               />
             </div>
           )}
-          <button
-            disabled={!selectedGrind}
-            onClick={() => setStep(3)}
-            className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors mt-2"
-          >
-            Next →
-          </button>
+          {grindProfiles.length > 0 && (
+            <button
+              disabled={!selectedGrind}
+              onClick={() => setStep(3)}
+              className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors mt-2"
+            >
+              Next →
+            </button>
+          )}
         </div>
       )}
 

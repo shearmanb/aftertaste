@@ -51,6 +51,8 @@ model Brew {
   aidenProfileId String
   grindOverride  Float?
   tempOverride   Int?
+  waterBrand     String?
+  waterAdditives String?
   tastingNote    TastingNote?
 }
 

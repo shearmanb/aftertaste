@@ -45,6 +45,8 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
           <Row label="Ratio" value={`${ratio}:1 (${brew.aidenProfile.coffeeG}g / ${brew.aidenProfile.waterG}g)`} />
           <Row label="Temp" value={`${temp}°F`} highlight={!!brew.tempOverride} />
           <Row label="Bloom" value={`${brew.aidenProfile.bloomWaterG}g / ${brew.aidenProfile.bloomTimeS}s`} />
+          {brew.waterBrand && <Row label="Water" value={brew.waterBrand} />}
+          {brew.waterAdditives && <Row label="Additives" value={brew.waterAdditives} />}
         </div>
 
         {brew.tastingNote ? (

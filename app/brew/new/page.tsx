@@ -19,6 +19,8 @@ export default function NewBrewPage() {
   const [selectedAiden, setSelectedAiden] = useState<AidenProfile | null>(null);
   const [grindOverride, setGrindOverride] = useState("");
   const [tempOverride, setTempOverride] = useState("");
+  const [waterBrand, setWaterBrand] = useState("");
+  const [waterAdditives, setWaterAdditives] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -38,6 +40,8 @@ export default function NewBrewPage() {
         aidenProfileId: selectedAiden!.id,
         grindOverride: grindOverride ? parseFloat(grindOverride) : undefined,
         tempOverride: tempOverride ? parseInt(tempOverride) : undefined,
+        waterBrand: waterBrand || undefined,
+        waterAdditives: waterAdditives || undefined,
       }),
     });
     const brew = await res.json();
@@ -159,11 +163,34 @@ export default function NewBrewPage() {
             </div>
           )}
 
+          <div className="mb-4">
+            <label className="text-stone-400 text-sm block mb-1">Water brand (optional)</label>
+            <input
+              type="text"
+              placeholder="e.g. Evian, Third Wave Water, tap"
+              value={waterBrand}
+              onChange={(e) => setWaterBrand(e.target.value)}
+              className="w-full bg-stone-900 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 focus:outline-none focus:border-amber-500"
+            />
+          </div>
+          <div className="mb-6">
+            <label className="text-stone-400 text-sm block mb-1">Additives (optional)</label>
+            <input
+              type="text"
+              placeholder="e.g. CaCl₂ 50mg/L, Epsom salt 20mg/L"
+              value={waterAdditives}
+              onChange={(e) => setWaterAdditives(e.target.value)}
+              className="w-full bg-stone-900 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 focus:outline-none focus:border-amber-500"
+            />
+          </div>
+
           <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-1 text-sm">
             <p className="text-stone-400 font-medium mb-2">Brew summary</p>
             <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer} — {selectedBean?.name}</p>
             <p className="text-stone-300"><span className="text-stone-500">Grind:</span> {grindOverride || selectedGrind?.setting}</p>
             {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}
+            {waterBrand && <p className="text-stone-300"><span className="text-stone-500">Water:</span> {waterBrand}</p>}
+            {waterAdditives && <p className="text-stone-300"><span className="text-stone-500">Additives:</span> {waterAdditives}</p>}
           </div>
 
           <button

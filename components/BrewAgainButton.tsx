@@ -20,6 +20,8 @@ export default function BrewAgainButton({ brewId }: { brewId: string }) {
         aidenProfileId: original.aidenProfileId,
         grindOverride: original.grindOverride,
         tempOverride: original.tempOverride,
+        waterBrand: original.waterBrand,
+        waterAdditives: original.waterAdditives,
       }),
     });
     const newBrew = await res.json();

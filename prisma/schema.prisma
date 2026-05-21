@@ -67,7 +67,7 @@ model Brew {
 
 model TastingNote {
   id              String   @id @default(cuid())
-  brew            Brew     @relation(fields: [brewId], references: [id])
+  brew            Brew     @relation(fields: [brewId], references: [id], onDelete: Cascade)
   brewId          String   @unique
   overallScore    Int
   fruit           Int

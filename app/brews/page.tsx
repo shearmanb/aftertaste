@@ -30,8 +30,12 @@ export default function BrewsPage() {
   async function deleteBrew(id: string) {
     if (!confirm("Delete this brew? This cannot be undone.")) return;
     setDeletingId(id);
-    await fetch(`/api/brews/${id}`, { method: "DELETE" });
-    setBrews((prev) => prev.filter((b) => b.id !== id));
+    const res = await fetch(`/api/brews/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setBrews((prev) => prev.filter((b) => b.id !== id));
+    } else {
+      alert("Failed to delete brew. Please try again.");
+    }
     setDeletingId(null);
   }
 

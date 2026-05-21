@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import BrewAgainButton from "@/components/BrewAgainButton";
+import DeleteBrewButton from "@/components/DeleteBrewButton";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +24,12 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
     <AppShell>
       <div className="flex items-center gap-3 mb-6 pt-2">
         <Link href="/brews" className="text-stone-400 hover:text-stone-200 text-2xl">‹</Link>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="font-bold text-stone-100 truncate">{brew.bean.producer} — {brew.bean.name}</h1>
           <p className="text-stone-500 text-sm">{format(new Date(brew.brewedAt), "MMM d, yyyy · h:mm a")}</p>
+        </div>
+        <div className="flex gap-3 shrink-0">
+          <Link href={`/brew/${id}/edit`} className="text-stone-400 hover:text-stone-200 text-sm">Edit</Link>
         </div>
       </div>
 
@@ -92,6 +96,7 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
         )}
 
         <BrewAgainButton brewId={id} />
+        <DeleteBrewButton brewId={id} />
       </div>
     </AppShell>
   );

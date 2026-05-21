@@ -8,14 +8,17 @@ datasource db {
 }
 
 model Bean {
-  id         String   @id @default(cuid())
-  producer   String
-  name       String
-  country    String?
-  roastLevel String
-  notes      String?
-  createdAt  DateTime @default(now())
-  brews      Brew[]
+  id           String   @id @default(cuid())
+  producer     String
+  name         String
+  region       String?
+  roastLevel   String
+  process      String?
+  tastingNotes String[]
+  imageUrl     String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  brews        Brew[]
 }
 
 model GrindProfile {
@@ -49,8 +52,6 @@ model Brew {
   grindProfileId String
   aidenProfile   AidenProfile  @relation(fields: [aidenProfileId], references: [id])
   aidenProfileId String
-  grindOverride  Float?
-  tempOverride   Int?
   tastingNote    TastingNote?
 }
 

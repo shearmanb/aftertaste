@@ -75,7 +75,7 @@ export default async function DashboardPage() {
                       {brew.bean.producer} — {brew.bean.name}
                     </p>
                     <p className="text-stone-500 text-sm mt-0.5">
-                      Grind {brew.grindOverride ?? brew.grindProfile.setting} ·{" "}
+                      Grind {brew.grindProfile.setting} ·{" "}
                       {formatDistanceToNow(new Date(brew.brewedAt), { addSuffix: true })}
                     </p>
                   </div>

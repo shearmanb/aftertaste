@@ -41,7 +41,7 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
 
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-2">
           <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Brew Settings</p>
-          <Row label="Water" value={brew.waterProfile.brand + (brew.waterProfile.additives ? ` · ${brew.waterProfile.additives}` : "")} />
+          {brew.waterProfile && <Row label="Water" value={brew.waterProfile.brand + (brew.waterProfile.additives ? ` · ${brew.waterProfile.additives}` : "")} />}
           <Row label="Grind" value={`${grind} (Ode Gen 2)`} />
           <Row label="Profile" value={brew.aidenProfile.name} />
           <Row label="Ratio" value={`${ratio}:1 (${brew.aidenProfile.coffeeG}g / ${brew.aidenProfile.waterG}g)`} />

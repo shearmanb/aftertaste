@@ -56,8 +56,8 @@ model Brew {
   brewedAt       DateTime      @default(now())
   bean           Bean          @relation(fields: [beanId], references: [id])
   beanId         String
-  waterProfile   WaterProfile  @relation(fields: [waterProfileId], references: [id])
-  waterProfileId String
+  waterProfile   WaterProfile? @relation(fields: [waterProfileId], references: [id])
+  waterProfileId String?
   grindProfile   GrindProfile  @relation(fields: [grindProfileId], references: [id])
   grindProfileId String
   aidenProfile   AidenProfile  @relation(fields: [aidenProfileId], references: [id])

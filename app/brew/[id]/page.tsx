@@ -15,8 +15,8 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
   });
   if (!brew) notFound();
 
-  const grind = brew.grindOverride ?? brew.grindProfile.setting;
-  const temp = brew.tempOverride ?? brew.aidenProfile.tempF;
+  const grind = brew.grindProfile.setting;
+  const temp = brew.aidenProfile.tempF;
   const ratio = (brew.aidenProfile.waterG / brew.aidenProfile.coffeeG).toFixed(1);
 
   return (
@@ -34,16 +34,17 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
           <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Bean</p>
           <Row label="Producer" value={brew.bean.producer} />
           <Row label="Name" value={brew.bean.name} />
-          {brew.bean.country && <Row label="Country" value={brew.bean.country} />}
+          {brew.bean.region && <Row label="Region" value={brew.bean.region} />}
+          {brew.bean.process && <Row label="Process" value={brew.bean.process} />}
           <Row label="Roast" value={brew.bean.roastLevel} />
         </div>
 
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-2">
           <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Brew Settings</p>
-          <Row label="Grind" value={String(grind)} highlight={!!brew.grindOverride} />
+          <Row label="Grind" value={`${grind} (Ode Gen 2)`} />
           <Row label="Profile" value={brew.aidenProfile.name} />
           <Row label="Ratio" value={`${ratio}:1 (${brew.aidenProfile.coffeeG}g / ${brew.aidenProfile.waterG}g)`} />
-          <Row label="Temp" value={`${temp}°F`} highlight={!!brew.tempOverride} />
+          <Row label="Temp" value={`${temp}°F`} />
           <Row label="Bloom" value={`${brew.aidenProfile.bloomWaterG}g / ${brew.aidenProfile.bloomTimeS}s`} />
         </div>
 
@@ -95,11 +96,11 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
   );
 }
 
-function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-baseline text-sm">
       <span className="text-stone-500">{label}</span>
-      <span className={highlight ? "text-amber-400 font-medium" : "text-stone-300"}>{value}</span>
+      <span className="text-stone-300">{value}</span>
     </div>
   );
 }

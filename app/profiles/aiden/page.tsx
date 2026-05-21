@@ -6,6 +6,92 @@ import { useEffect, useState } from "react";
 type Pour = { sequence: number; waterG: number; pauseS: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number; bloomTimeS: number; bloomWaterG: number; pours: Pour[]; notes?: string | null };
 
+function AidenSettingsCard({ p }: { p: AidenProfile }) {
+  const ratio = (p.waterG / p.coffeeG).toFixed(1);
+  const pours = Array.isArray(p.pours) ? p.pours : [];
+  const totalPourWater = pours.reduce((acc, pour) => acc + pour.waterG, 0);
+
+  return (
+    <div className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
+      {/* Header */}
+      <div className="px-4 pt-4 pb-3 border-b border-stone-800">
+        <p className="font-semibold text-stone-100">{p.name}</p>
+      </div>
+
+      {/* Key metrics grid */}
+      <div className="grid grid-cols-3 divide-x divide-stone-800 border-b border-stone-800">
+        <div className="p-3 text-center">
+          <p className="text-stone-500 text-xs mb-1">Ratio</p>
+          <p className="text-amber-400 font-bold text-lg">{ratio}:1</p>
+          <p className="text-stone-600 text-xs">{p.coffeeG}g / {p.waterG}g</p>
+        </div>
+        <div className="p-3 text-center">
+          <p className="text-stone-500 text-xs mb-1">Temp</p>
+          <p className="text-amber-400 font-bold text-lg">{p.tempF}°</p>
+          <p className="text-stone-600 text-xs">Fahrenheit</p>
+        </div>
+        <div className="p-3 text-center">
+          <p className="text-stone-500 text-xs mb-1">Pours</p>
+          <p className="text-amber-400 font-bold text-lg">{pours.length}</p>
+          <p className="text-stone-600 text-xs">after bloom</p>
+        </div>
+      </div>
+
+      {/* Brew sequence */}
+      <div className="p-4">
+        <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-3">Brew Sequence</p>
+        <div className="space-y-2">
+          {/* Bloom */}
+          <div className="flex items-center gap-3">
+            <div className="w-14 shrink-0">
+              <span className="text-xs text-stone-500 font-medium">Bloom</span>
+            </div>
+            <div className="flex-1 bg-stone-800 rounded-full h-5 overflow-hidden">
+              <div
+                className="h-full bg-teal-700 rounded-full flex items-center justify-end pr-2"
+                style={{ width: `${Math.min(100, (p.bloomWaterG / p.waterG) * 100)}%` }}
+              >
+                <span className="text-white text-xs font-medium">{p.bloomWaterG}g</span>
+              </div>
+            </div>
+            <div className="w-12 shrink-0 text-right">
+              <span className="text-stone-400 text-xs">{p.bloomTimeS}s</span>
+            </div>
+          </div>
+          {/* Pours */}
+          {pours.map((pour) => {
+            const pct = Math.min(100, (pour.waterG / p.waterG) * 100);
+            return (
+              <div key={pour.sequence} className="flex items-center gap-3">
+                <div className="w-14 shrink-0">
+                  <span className="text-xs text-stone-500 font-medium">Pour {pour.sequence}</span>
+                </div>
+                <div className="flex-1 bg-stone-800 rounded-full h-5 overflow-hidden">
+                  <div
+                    className="h-full bg-amber-700 rounded-full flex items-center justify-end pr-2"
+                    style={{ width: `${pct}%` }}
+                  >
+                    <span className="text-white text-xs font-medium">{pour.waterG}g</span>
+                  </div>
+                </div>
+                <div className="w-12 shrink-0 text-right">
+                  <span className="text-stone-400 text-xs">{pour.pauseS}s</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-between mt-3 pt-3 border-t border-stone-800 text-xs text-stone-500">
+          <span>Total water: {p.waterG}g</span>
+          <span>Coffee: {p.coffeeG}g</span>
+        </div>
+      </div>
+
+      {p.notes && <p className="px-4 pb-4 text-stone-500 text-xs italic">{p.notes}</p>}
+    </div>
+  );
+}
+
 export default function AidenProfilesPage() {
   const [profiles, setProfiles] = useState<AidenProfile[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -103,22 +189,8 @@ export default function AidenProfilesPage() {
         </div>
       )}
 
-      <div className="space-y-3">
-        {profiles.map((p) => (
-          <div key={p.id} className="bg-stone-900 border border-stone-800 rounded-xl p-4">
-            <p className="font-semibold text-stone-100">{p.name}</p>
-            <div className="grid grid-cols-3 gap-x-4 mt-2 text-sm">
-              <span className="text-stone-500">Ratio</span>
-              <span className="text-stone-500">Temp</span>
-              <span className="text-stone-500">Bloom</span>
-              <span className="text-stone-300 font-medium">{(p.waterG / p.coffeeG).toFixed(1)}:1</span>
-              <span className="text-stone-300 font-medium">{p.tempF}°F</span>
-              <span className="text-stone-300 font-medium">{p.bloomWaterG}g / {p.bloomTimeS}s</span>
-            </div>
-            <p className="text-stone-500 text-xs mt-1.5">{p.coffeeG}g coffee · {p.waterG}g water · {Array.isArray(p.pours) ? p.pours.length : "?"} pours</p>
-            {p.notes && <p className="text-stone-500 text-xs mt-1 italic">{p.notes}</p>}
-          </div>
-        ))}
+      <div className="space-y-4">
+        {profiles.map((p) => <AidenSettingsCard key={p.id} p={p} />)}
         {profiles.length === 0 && !showForm && (
           <div className="text-center py-12 text-stone-500">
             <p>No Aiden profiles yet</p>

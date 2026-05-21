@@ -23,7 +23,7 @@ export async function POST() {
     brews.map((b) => ({
       date: b.brewedAt,
       bean: `${b.bean.producer} - ${b.bean.name} (${b.bean.region ?? "unknown"}, ${b.bean.roastLevel}${b.bean.process ? `, ${b.bean.process}` : ""})`,
-      water: b.waterProfile.brand + (b.waterProfile.additives ? ` · ${b.waterProfile.additives}` : ""),
+      water: b.waterProfile ? b.waterProfile.brand + (b.waterProfile.additives ? ` · ${b.waterProfile.additives}` : "") : "unknown",
       grind: b.grindProfile.setting,
       tempF: b.aidenProfile.tempF,
       ratio: `${b.aidenProfile.waterG}g water / ${b.aidenProfile.coffeeG}g coffee`,

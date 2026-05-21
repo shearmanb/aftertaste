@@ -16,10 +16,9 @@ export default function BrewAgainButton({ brewId }: { brewId: string }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         beanId: original.beanId,
+        waterProfileId: original.waterProfileId,
         grindProfileId: original.grindProfileId,
         aidenProfileId: original.aidenProfileId,
-        grindOverride: original.grindOverride,
-        tempOverride: original.tempOverride,
       }),
     });
     const newBrew = await res.json();

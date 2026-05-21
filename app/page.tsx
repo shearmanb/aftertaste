@@ -6,11 +6,15 @@ import { formatDistanceToNow } from "date-fns";
 export const dynamic = "force-dynamic";
 
 async function getRecentBrews() {
-  return prisma.brew.findMany({
-    take: 5,
-    orderBy: { brewedAt: "desc" },
-    include: { bean: true, grindProfile: true, tastingNote: true },
-  });
+  try {
+    return await prisma.brew.findMany({
+      take: 5,
+      orderBy: { brewedAt: "desc" },
+      include: { bean: true, grindProfile: true, tastingNote: true },
+    });
+  } catch {
+    return [];
+  }
 }
 
 function ScoreDots({ score, max = 10 }: { score: number; max?: number }) {

@@ -9,15 +9,25 @@ type AidenProfile = {
   bloomTimeS: number; bloomWaterG: number; pours: Pour[]; notes?: string | null;
 };
 
-function AidenSettingsCard({ p }: { p: AidenProfile }) {
+function AidenSettingsCard({ p, onEdit }: { p: AidenProfile; onEdit: (p: AidenProfile) => void }) {
   const ratio = (p.waterG / p.coffeeG).toFixed(1);
   const bloomRatio = (p.bloomWaterG / p.coffeeG).toFixed(1);
   const pours = Array.isArray(p.pours) ? p.pours : [];
 
   return (
     <div className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
-      <div className="px-4 pt-4 pb-3 border-b border-stone-800">
+      <div className="px-4 pt-4 pb-3 border-b border-stone-800 flex items-center justify-between">
         <p className="font-semibold text-stone-100">{p.name}</p>
+        <button
+          onClick={() => onEdit(p)}
+          className="p-1.5 text-stone-500 hover:text-stone-300 transition-colors"
+          aria-label="Edit Aiden profile"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
       </div>
       <div className="grid grid-cols-3 divide-x divide-stone-800 border-b border-stone-800">
         <div className="p-3 text-center">
@@ -84,6 +94,7 @@ function AidenSettingsCard({ p }: { p: AidenProfile }) {
 export default function AidenProfilesPage() {
   const [profiles, setProfiles] = useState<AidenProfile[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [coffeeG, setCoffeeG] = useState("18");
@@ -117,42 +128,82 @@ export default function AidenProfilesPage() {
     setPulses((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  async function save() {
-    setSaving(true);
-    const pours = pulses.map((p, i) => ({ sequence: i + 1, waterG: parseFloat(p) || 0 }));
-    const res = await fetch("/api/profiles/aiden", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        coffeeG: coffee,
-        waterG: totalWater,
-        tempF: parseInt(tempF),
-        bloomTimeS: parseInt(bloomTimeS),
-        bloomWaterG: bloomWater,
-        pours,
-        notes: notes || undefined,
-      }),
-    });
-    const profile = await res.json();
-    setProfiles((prev) => [...prev, profile]);
-    setShowForm(false);
+  function resetForm() {
     setName(""); setCoffeeG("18"); setRatio("16"); setBloomRatio("2");
     setBloomTimeS("45"); setTempF("205"); setPulsePauseS("30");
     setPulses(["", "", ""]); setNotes("");
+  }
+
+  function openEdit(p: AidenProfile) {
+    const pours = Array.isArray(p.pours) ? p.pours : [];
+    setEditingId(p.id);
+    setName(p.name);
+    setCoffeeG(String(p.coffeeG));
+    setRatio((p.waterG / p.coffeeG).toFixed(1));
+    setBloomRatio((p.bloomWaterG / p.coffeeG).toFixed(1));
+    setBloomTimeS(String(p.bloomTimeS));
+    setTempF(String(p.tempF));
+    setPulsePauseS("30");
+    setPulses(pours.length > 0 ? pours.map((pour) => String(pour.waterG)) : [""]);
+    setNotes(p.notes ?? "");
+    setShowForm(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function closeForm() {
+    setShowForm(false);
+    setEditingId(null);
+    resetForm();
+  }
+
+  async function save() {
+    setSaving(true);
+    const pours = pulses.map((p, i) => ({ sequence: i + 1, waterG: parseFloat(p) || 0 }));
+    const payload = {
+      name,
+      coffeeG: coffee,
+      waterG: totalWater,
+      tempF: parseInt(tempF),
+      bloomTimeS: parseInt(bloomTimeS),
+      bloomWaterG: bloomWater,
+      pours,
+      notes: notes || undefined,
+    };
+
+    if (editingId) {
+      const res = await fetch(`/api/profiles/aiden/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const updated = await res.json();
+      setProfiles((prev) => prev.map((p) => p.id === editingId ? updated : p));
+    } else {
+      const res = await fetch("/api/profiles/aiden", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const profile = await res.json();
+      setProfiles((prev) => [...prev, profile]);
+    }
+
+    closeForm();
     setSaving(false);
   }
+
+  const formVisible = showForm || editingId !== null;
 
   return (
     <AppShell>
       <div className="flex items-center justify-between mb-6 pt-2">
         <h1 className="text-xl font-bold text-stone-100">Aiden Profiles</h1>
-        <button onClick={() => setShowForm(true)} className="bg-amber-600 hover:bg-amber-500 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-xl transition-colors">+</button>
+        <button onClick={() => { setEditingId(null); resetForm(); setShowForm(true); }} className="bg-amber-600 hover:bg-amber-500 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-xl transition-colors">+</button>
       </div>
 
-      {showForm && (
+      {formVisible && (
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-5 mb-5 space-y-5">
-          <p className="text-stone-300 font-medium text-sm">Add Aiden Profile</p>
+          <p className="text-stone-300 font-medium text-sm">{editingId ? "Edit Aiden Profile" : "Add Aiden Profile"}</p>
 
           <input placeholder="Name *" value={name} onChange={(e) => setName(e.target.value)} className="input-field" />
 
@@ -231,17 +282,21 @@ export default function AidenProfilesPage() {
           </div>
 
           <div className="flex gap-2">
-            <button onClick={() => setShowForm(false)} className="flex-1 py-2 bg-stone-800 text-stone-400 rounded-lg text-sm">Cancel</button>
+            <button onClick={closeForm} className="flex-1 py-2 bg-stone-800 text-stone-400 rounded-lg text-sm">Cancel</button>
             <button onClick={save} disabled={!name || saving} className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
-              {saving ? "Saving..." : "Save"}
+              {saving ? "Saving..." : editingId ? "Update" : "Save"}
             </button>
           </div>
         </div>
       )}
 
       <div className="space-y-4">
-        {profiles.map((p) => <AidenSettingsCard key={p.id} p={p} />)}
-        {profiles.length === 0 && !showForm && (
+        {profiles.map((p) => (
+          <div key={p.id} className={`rounded-xl transition-colors ${editingId === p.id ? "ring-1 ring-amber-600/60" : ""}`}>
+            <AidenSettingsCard p={p} onEdit={openEdit} />
+          </div>
+        ))}
+        {profiles.length === 0 && !formVisible && (
           <div className="text-center py-12 text-stone-500">
             <p>No Aiden profiles yet</p>
             <button onClick={() => setShowForm(true)} className="text-amber-500 underline text-sm mt-1">Add first profile →</button>

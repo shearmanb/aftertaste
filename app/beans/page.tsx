@@ -30,6 +30,7 @@ const BEAN_TASTING_NOTES = [
 export default function BeansPage() {
   const [beans, setBeans] = useState<Bean[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // form state
   const [producerInput, setProducerInput] = useState("");
@@ -63,44 +64,80 @@ export default function BeansPage() {
     setTastingNotes([]); setImageUrl(""); setNotes("");
   }
 
+  function openEdit(bean: Bean) {
+    setEditingId(bean.id);
+    setProducerInput(bean.producer);
+    setUseNewProducer(false);
+    setNewProducer("");
+    setName(bean.name);
+    setRegion(bean.region ?? "");
+    setRoastLevel(bean.roastLevel);
+    setProcess(bean.process ?? "");
+    setTastingNotes(bean.tastingNotes);
+    setImageUrl(bean.imageUrl ?? "");
+    setNotes(bean.notes ?? "");
+    setShowForm(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function closeForm() {
+    setShowForm(false);
+    setEditingId(null);
+    resetForm();
+  }
+
   async function save() {
     setSaving(true);
-    const res = await fetch("/api/beans", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        producer,
-        name,
-        region: region || undefined,
-        roastLevel,
-        process: process || undefined,
-        tastingNotes,
-        imageUrl: imageUrl || undefined,
-        notes: notes || undefined,
-      }),
-    });
-    const bean = await res.json();
-    setBeans((prev) => [...prev, bean]);
-    setShowForm(false);
-    resetForm();
+    const payload = {
+      producer,
+      name,
+      region: region || undefined,
+      roastLevel,
+      process: process || undefined,
+      tastingNotes,
+      imageUrl: imageUrl || undefined,
+      notes: notes || undefined,
+    };
+
+    if (editingId) {
+      const res = await fetch(`/api/beans/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const updated = await res.json();
+      setBeans((prev) => prev.map((b) => b.id === editingId ? updated : b));
+    } else {
+      const res = await fetch("/api/beans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const bean = await res.json();
+      setBeans((prev) => [...prev, bean]);
+    }
+
+    closeForm();
     setSaving(false);
   }
+
+  const formVisible = showForm || editingId !== null;
 
   return (
     <AppShell>
       <div className="flex items-center justify-between mb-6 pt-2">
         <h1 className="text-xl font-bold text-stone-100">Beans</h1>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => { setEditingId(null); resetForm(); setShowForm(true); }}
           className="bg-amber-600 hover:bg-amber-500 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-xl transition-colors"
         >
           +
         </button>
       </div>
 
-      {showForm && (
+      {formVisible && (
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-5 mb-5 space-y-4">
-          <p className="text-stone-300 font-medium text-sm">Add Bean</p>
+          <p className="text-stone-300 font-medium text-sm">{editingId ? "Edit Bean" : "Add Bean"}</p>
 
           {/* Producer dropdown */}
           <div>
@@ -218,7 +255,7 @@ export default function BeansPage() {
 
           <div className="flex gap-2">
             <button
-              onClick={() => { setShowForm(false); resetForm(); }}
+              onClick={closeForm}
               className="flex-1 py-2 bg-stone-800 text-stone-400 rounded-lg text-sm"
             >
               Cancel
@@ -228,13 +265,13 @@ export default function BeansPage() {
               disabled={!producer || !name || saving}
               className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors"
             >
-              {saving ? "Saving..." : "Save"}
+              {saving ? "Saving..." : editingId ? "Update" : "Save"}
             </button>
           </div>
         </div>
       )}
 
-      {beans.length === 0 && !showForm ? (
+      {beans.length === 0 && !formVisible ? (
         <div className="text-center py-16 text-stone-500">
           <p className="text-4xl mb-3">◉</p>
           <p className="font-medium">No beans yet</p>
@@ -245,7 +282,7 @@ export default function BeansPage() {
       ) : (
         <div className="space-y-3">
           {beans.map((bean) => (
-            <div key={bean.id} className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
+            <div key={bean.id} className={`bg-stone-900 border rounded-xl overflow-hidden transition-colors ${editingId === bean.id ? "border-amber-600/60" : "border-stone-800"}`}>
               {bean.imageUrl && (
                 <img
                   src={bean.imageUrl}
@@ -254,8 +291,22 @@ export default function BeansPage() {
                 />
               )}
               <div className="p-4">
-                <p className="font-semibold text-stone-100">{bean.producer}</p>
-                <p className="text-stone-400 text-sm">{bean.name}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-stone-100">{bean.producer}</p>
+                    <p className="text-stone-400 text-sm">{bean.name}</p>
+                  </div>
+                  <button
+                    onClick={() => openEdit(bean)}
+                    className="shrink-0 p-1.5 text-stone-500 hover:text-stone-300 transition-colors"
+                    aria-label="Edit bean"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                </div>
                 <div className="flex gap-1.5 mt-2 flex-wrap">
                   <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 rounded-full">{bean.roastLevel}</span>
                   {bean.region && (

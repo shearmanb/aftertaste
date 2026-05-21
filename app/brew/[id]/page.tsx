@@ -29,6 +29,7 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
           <p className="text-stone-500 text-sm">{format(new Date(brew.brewedAt), "MMM d, yyyy · h:mm a")}</p>
         </div>
         <div className="flex gap-3 shrink-0">
+          <Link href={`/brew/new?from=${id}`} className="text-amber-500 hover:text-amber-400 text-sm font-medium">Branch</Link>
           <Link href={`/brew/${id}/edit`} className="text-stone-400 hover:text-stone-200 text-sm">Edit</Link>
         </div>
       </div>

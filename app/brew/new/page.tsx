@@ -1,17 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import OdeDial from "@/components/OdeDial";
+import { format } from "date-fns";
 
 type Pour = { sequence: number; waterG: number; pauseS: number };
 type WaterProfile = { id: string; brand: string; additives?: string | null };
 type Bean = { id: string; producer: string; name: string; roastLevel: string; region?: string | null; process?: string | null };
 type GrindProfile = { id: string; name: string; setting: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number; bloomTimeS: number; bloomWaterG: number; pours: Pour[] };
+type SourceBrew = { brewedAt: string; bean: Bean; waterProfile?: WaterProfile | null; grindProfile: GrindProfile; aidenProfile: AidenProfile };
 
 export default function NewBrewPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromId = searchParams.get("from");
+
   const [step, setStep] = useState(1);
   const [waterProfiles, setWaterProfiles] = useState<WaterProfile[]>([]);
   const [beans, setBeans] = useState<Bean[]>([]);
@@ -22,14 +27,34 @@ export default function NewBrewPage() {
   const [selectedBean, setSelectedBean] = useState<Bean | null>(null);
   const [selectedGrind, setSelectedGrind] = useState<GrindProfile | null>(null);
   const [selectedAiden, setSelectedAiden] = useState<AidenProfile | null>(null);
+  const [sourceBrew, setSourceBrew] = useState<SourceBrew | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/profiles/water").then((r) => r.json()).then(setWaterProfiles);
-    fetch("/api/beans").then((r) => r.json()).then(setBeans);
-    fetch("/api/profiles/grind").then((r) => r.json()).then(setGrindProfiles);
-    fetch("/api/profiles/aiden").then((r) => r.json()).then(setAidenProfiles);
-  }, []);
+    const fetches = [
+      fetch("/api/profiles/water").then((r) => r.json()),
+      fetch("/api/beans").then((r) => r.json()),
+      fetch("/api/profiles/grind").then((r) => r.json()),
+      fetch("/api/profiles/aiden").then((r) => r.json()),
+    ];
+    const sourcePromise = fromId
+      ? fetch(`/api/brews/${fromId}`).then((r) => r.json())
+      : Promise.resolve(null);
+
+    Promise.all([...fetches, sourcePromise]).then(([water, beansData, grind, aiden, source]) => {
+      setWaterProfiles(water);
+      setBeans(beansData);
+      setGrindProfiles(grind);
+      setAidenProfiles(aiden);
+      if (source) {
+        setSourceBrew(source);
+        if (source.waterProfile) setSelectedWater(source.waterProfile);
+        setSelectedBean(source.bean);
+        setSelectedGrind(source.grindProfile);
+        setSelectedAiden(source.aidenProfile);
+      }
+    });
+  }, [fromId]);
 
   async function submit() {
     setSubmitting(true);
@@ -37,7 +62,7 @@ export default function NewBrewPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        waterProfileId: selectedWater!.id,
+        waterProfileId: selectedWater?.id,
         beanId: selectedBean!.id,
         grindProfileId: selectedGrind!.id,
         aidenProfileId: selectedAiden!.id,
@@ -51,20 +76,33 @@ export default function NewBrewPage() {
 
   return (
     <div className="min-h-screen bg-stone-950 px-4 pt-6 pb-10 max-w-lg mx-auto">
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-4">
         <button
           onClick={() => step > 1 ? setStep(s => s - 1) : router.back()}
           className="text-stone-400 hover:text-stone-200 text-2xl leading-none"
         >
           ‹
         </button>
-        <h1 className="text-xl font-bold text-stone-100">New Brew</h1>
+        <h1 className="text-xl font-bold text-stone-100">
+          {fromId ? "Branch Brew" : "New Brew"}
+        </h1>
         <div className="ml-auto flex gap-1.5">
           {Array.from({ length: totalSteps }, (_, i) => (
             <div key={i} className={`w-2 h-2 rounded-full ${step > i ? "bg-amber-500" : "bg-stone-700"}`} />
           ))}
         </div>
       </div>
+
+      {/* Branch banner */}
+      {sourceBrew && (
+        <div className="bg-amber-950/40 border border-amber-800/40 rounded-xl px-4 py-2.5 mb-5 flex items-center gap-2">
+          <span className="text-amber-500 text-sm">⑂</span>
+          <p className="text-amber-300/80 text-xs">
+            Branching from <span className="font-medium text-amber-300">{sourceBrew.bean.producer} — {sourceBrew.bean.name}</span>
+            <span className="text-amber-500/60"> · {format(new Date(sourceBrew.brewedAt), "MMM d, yyyy")}</span>
+          </p>
+        </div>
+      )}
 
       {/* Step 1: Water */}
       {step === 1 && (
@@ -82,13 +120,23 @@ export default function NewBrewPage() {
                 <button
                   key={w.id}
                   onClick={() => { setSelectedWater(w); setStep(2); }}
-                  className="w-full text-left bg-stone-900 border border-stone-800 hover:border-amber-600 rounded-xl p-4 transition-colors"
+                  className={`w-full text-left rounded-xl p-4 border transition-colors ${
+                    selectedWater?.id === w.id
+                      ? "border-amber-500 bg-stone-900"
+                      : "bg-stone-900 border-stone-800 hover:border-amber-600"
+                  }`}
                 >
                   <p className="font-semibold text-stone-100">{w.brand}</p>
                   {w.additives && <p className="text-stone-400 text-sm">{w.additives}</p>}
+                  {selectedWater?.id === w.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
                 </button>
               ))}
             </div>
+          )}
+          {selectedWater && (
+            <button onClick={() => setStep(2)} className="w-full mt-4 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">
+              Next →
+            </button>
           )}
         </div>
       )}
@@ -108,7 +156,11 @@ export default function NewBrewPage() {
                 <button
                   key={bean.id}
                   onClick={() => { setSelectedBean(bean); setStep(3); }}
-                  className="w-full text-left bg-stone-900 border border-stone-800 hover:border-amber-600 rounded-xl p-4 transition-colors"
+                  className={`w-full text-left rounded-xl p-4 border transition-colors ${
+                    selectedBean?.id === bean.id
+                      ? "border-amber-500 bg-stone-900"
+                      : "bg-stone-900 border-stone-800 hover:border-amber-600"
+                  }`}
                 >
                   <p className="font-semibold text-stone-100">{bean.producer}</p>
                   <p className="text-stone-400 text-sm">
@@ -116,9 +168,15 @@ export default function NewBrewPage() {
                     {bean.region ? ` · ${bean.region}` : ""}
                     {bean.process ? ` · ${bean.process}` : ""}
                   </p>
+                  {selectedBean?.id === bean.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
                 </button>
               ))}
             </div>
+          )}
+          {selectedBean && (
+            <button onClick={() => setStep(3)} className="w-full mt-4 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">
+              Next →
+            </button>
           )}
         </div>
       )}
@@ -132,10 +190,13 @@ export default function NewBrewPage() {
               <button
                 key={gp.id}
                 onClick={() => setSelectedGrind(gp)}
-                className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${selectedGrind?.id === gp.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"}`}
+                className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${
+                  selectedGrind?.id === gp.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"
+                }`}
               >
                 <p className="font-semibold text-stone-100">{gp.name}</p>
                 <p className="text-stone-400 text-sm">Setting {gp.setting}</p>
+                {selectedGrind?.id === gp.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
               </button>
             ))}
           </div>
@@ -169,13 +230,16 @@ export default function NewBrewPage() {
               <button
                 key={ap.id}
                 onClick={() => setSelectedAiden(ap)}
-                className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${selectedAiden?.id === ap.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"}`}
+                className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${
+                  selectedAiden?.id === ap.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"
+                }`}
               >
                 <p className="font-semibold text-stone-100">{ap.name}</p>
                 <p className="text-stone-400 text-sm">
                   {ap.coffeeG}g / {ap.waterG}g · {ap.tempF}°F
                   <span className="ml-1 text-stone-600">(ratio {(ap.waterG / ap.coffeeG).toFixed(1)}:1)</span>
                 </p>
+                {selectedAiden?.id === ap.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
               </button>
             ))}
           </div>
@@ -228,10 +292,10 @@ export default function NewBrewPage() {
             </div>
           )}
 
-          {/* Brew summary */}
+          {/* Summary */}
           <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-1 text-sm">
             <p className="text-stone-400 font-medium mb-2">Brew summary</p>
-            <p className="text-stone-300"><span className="text-stone-500">Water:</span> {selectedWater?.brand}{selectedWater?.additives ? ` · ${selectedWater.additives}` : ""}</p>
+            {selectedWater && <p className="text-stone-300"><span className="text-stone-500">Water:</span> {selectedWater.brand}{selectedWater.additives ? ` · ${selectedWater.additives}` : ""}</p>}
             <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer} — {selectedBean?.name}</p>
             <p className="text-stone-300"><span className="text-stone-500">Grind:</span> {selectedGrind?.setting} (Ode Gen 2)</p>
             {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}
@@ -242,7 +306,7 @@ export default function NewBrewPage() {
             onClick={submit}
             className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors"
           >
-            {submitting ? "Logging..." : "Start Brew →"}
+            {submitting ? "Logging..." : fromId ? "Branch →" : "Start Brew →"}
           </button>
         </div>
       )}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import OdeDial from "@/components/OdeDial";
 
 type Pour = { sequence: number; waterG: number; pauseS: number };
+type WaterProfile = { id: string; brand: string; additives?: string | null };
 type Bean = { id: string; producer: string; name: string; roastLevel: string; region?: string | null; process?: string | null };
 type GrindProfile = { id: string; name: string; setting: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number; bloomTimeS: number; bloomWaterG: number; pours: Pour[] };
@@ -12,16 +13,19 @@ type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number;
 export default function NewBrewPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [waterProfiles, setWaterProfiles] = useState<WaterProfile[]>([]);
   const [beans, setBeans] = useState<Bean[]>([]);
   const [grindProfiles, setGrindProfiles] = useState<GrindProfile[]>([]);
   const [aidenProfiles, setAidenProfiles] = useState<AidenProfile[]>([]);
 
+  const [selectedWater, setSelectedWater] = useState<WaterProfile | null>(null);
   const [selectedBean, setSelectedBean] = useState<Bean | null>(null);
   const [selectedGrind, setSelectedGrind] = useState<GrindProfile | null>(null);
   const [selectedAiden, setSelectedAiden] = useState<AidenProfile | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    fetch("/api/profiles/water").then((r) => r.json()).then(setWaterProfiles);
     fetch("/api/beans").then((r) => r.json()).then(setBeans);
     fetch("/api/profiles/grind").then((r) => r.json()).then(setGrindProfiles);
     fetch("/api/profiles/aiden").then((r) => r.json()).then(setAidenProfiles);
@@ -33,6 +37,7 @@ export default function NewBrewPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        waterProfileId: selectedWater!.id,
         beanId: selectedBean!.id,
         grindProfileId: selectedGrind!.id,
         aidenProfileId: selectedAiden!.id,
@@ -42,19 +47,54 @@ export default function NewBrewPage() {
     router.push(`/brew/${brew.id}/taste`);
   }
 
+  const totalSteps = 4;
+
   return (
     <div className="min-h-screen bg-stone-950 px-4 pt-6 pb-10 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => step > 1 ? setStep(s => s - 1) : router.back()} className="text-stone-400 hover:text-stone-200 text-2xl leading-none">‹</button>
+        <button
+          onClick={() => step > 1 ? setStep(s => s - 1) : router.back()}
+          className="text-stone-400 hover:text-stone-200 text-2xl leading-none"
+        >
+          ‹
+        </button>
         <h1 className="text-xl font-bold text-stone-100">New Brew</h1>
         <div className="ml-auto flex gap-1.5">
-          {[1, 2, 3].map((n) => (
-            <div key={n} className={`w-2 h-2 rounded-full ${step >= n ? "bg-amber-500" : "bg-stone-700"}`} />
+          {Array.from({ length: totalSteps }, (_, i) => (
+            <div key={i} className={`w-2 h-2 rounded-full ${step > i ? "bg-amber-500" : "bg-stone-700"}`} />
           ))}
         </div>
       </div>
 
+      {/* Step 1: Water */}
       {step === 1 && (
+        <div>
+          <p className="text-stone-400 text-sm mb-4 font-medium">Select water</p>
+          {waterProfiles.length === 0 ? (
+            <div className="text-center py-10 text-stone-500">
+              <p className="text-3xl mb-2">≋</p>
+              <p>No water profiles yet.</p>
+              <a href="/profiles/water" className="text-amber-500 underline text-sm mt-1 block">Add a water profile first →</a>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {waterProfiles.map((w) => (
+                <button
+                  key={w.id}
+                  onClick={() => { setSelectedWater(w); setStep(2); }}
+                  className="w-full text-left bg-stone-900 border border-stone-800 hover:border-amber-600 rounded-xl p-4 transition-colors"
+                >
+                  <p className="font-semibold text-stone-100">{w.brand}</p>
+                  {w.additives && <p className="text-stone-400 text-sm">{w.additives}</p>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Step 2: Beans */}
+      {step === 2 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select beans</p>
           {beans.length === 0 ? (
@@ -67,7 +107,7 @@ export default function NewBrewPage() {
               {beans.map((bean) => (
                 <button
                   key={bean.id}
-                  onClick={() => { setSelectedBean(bean); setStep(2); }}
+                  onClick={() => { setSelectedBean(bean); setStep(3); }}
                   className="w-full text-left bg-stone-900 border border-stone-800 hover:border-amber-600 rounded-xl p-4 transition-colors"
                 >
                   <p className="font-semibold text-stone-100">{bean.producer}</p>
@@ -83,7 +123,8 @@ export default function NewBrewPage() {
         </div>
       )}
 
-      {step === 2 && (
+      {/* Step 3: Grind */}
+      {step === 3 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select grind profile</p>
           <div className="space-y-2 mb-4">
@@ -103,13 +144,15 @@ export default function NewBrewPage() {
             <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
               <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-3 text-center">Dial Confirmation</p>
               <OdeDial setting={selectedGrind.setting} />
-              <p className="text-stone-400 text-sm text-center mt-2">Set Fellow Ode Gen 2 to <span className="text-amber-400 font-bold">{selectedGrind.setting}</span></p>
+              <p className="text-stone-400 text-sm text-center mt-2">
+                Set Fellow Ode Gen 2 to <span className="text-amber-400 font-bold">{selectedGrind.setting}</span>
+              </p>
             </div>
           )}
 
           <button
             disabled={!selectedGrind}
-            onClick={() => setStep(3)}
+            onClick={() => setStep(4)}
             className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors"
           >
             Next →
@@ -117,7 +160,8 @@ export default function NewBrewPage() {
         </div>
       )}
 
-      {step === 3 && (
+      {/* Step 4: Aiden */}
+      {step === 4 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select Aiden profile</p>
           <div className="space-y-2 mb-4">
@@ -141,16 +185,16 @@ export default function NewBrewPage() {
               <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide px-4 pt-4 pb-2">Aiden Settings</p>
               <div className="grid grid-cols-3 divide-x divide-stone-800 border-y border-stone-800">
                 <div className="p-3 text-center">
-                  <p className="text-stone-500 text-xs mb-0.5">Ratio</p>
-                  <p className="text-amber-400 font-bold">{(selectedAiden.waterG / selectedAiden.coffeeG).toFixed(1)}:1</p>
+                  <p className="text-stone-500 text-xs mb-0.5">Coffee</p>
+                  <p className="text-amber-400 font-bold">{selectedAiden.coffeeG}g</p>
+                </div>
+                <div className="p-3 text-center">
+                  <p className="text-stone-500 text-xs mb-0.5">Water</p>
+                  <p className="text-amber-400 font-bold">{selectedAiden.waterG}g</p>
                 </div>
                 <div className="p-3 text-center">
                   <p className="text-stone-500 text-xs mb-0.5">Temp</p>
                   <p className="text-amber-400 font-bold">{selectedAiden.tempF}°F</p>
-                </div>
-                <div className="p-3 text-center">
-                  <p className="text-stone-500 text-xs mb-0.5">Bloom</p>
-                  <p className="text-amber-400 font-bold">{selectedAiden.bloomWaterG}g</p>
                 </div>
               </div>
               <div className="p-4 space-y-2">
@@ -184,8 +228,10 @@ export default function NewBrewPage() {
             </div>
           )}
 
+          {/* Brew summary */}
           <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-1 text-sm">
             <p className="text-stone-400 font-medium mb-2">Brew summary</p>
+            <p className="text-stone-300"><span className="text-stone-500">Water:</span> {selectedWater?.brand}{selectedWater?.additives ? ` · ${selectedWater.additives}` : ""}</p>
             <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer} — {selectedBean?.name}</p>
             <p className="text-stone-300"><span className="text-stone-500">Grind:</span> {selectedGrind?.setting} (Ode Gen 2)</p>
             {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}

@@ -21,6 +21,14 @@ model Bean {
   brews        Brew[]
 }
 
+model WaterProfile {
+  id        String  @id @default(cuid())
+  brand     String
+  additives String?
+  notes     String?
+  brews     Brew[]
+}
+
 model GrindProfile {
   id      String @id @default(cuid())
   name    String
@@ -48,6 +56,8 @@ model Brew {
   brewedAt       DateTime      @default(now())
   bean           Bean          @relation(fields: [beanId], references: [id])
   beanId         String
+  waterProfile   WaterProfile  @relation(fields: [waterProfileId], references: [id])
+  waterProfileId String
   grindProfile   GrindProfile  @relation(fields: [grindProfileId], references: [id])
   grindProfileId String
   aidenProfile   AidenProfile  @relation(fields: [aidenProfileId], references: [id])

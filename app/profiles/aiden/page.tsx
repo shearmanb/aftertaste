@@ -21,19 +21,19 @@ function AidenSettingsCard({ p }: { p: AidenProfile }) {
       {/* Key metrics grid */}
       <div className="grid grid-cols-3 divide-x divide-stone-800 border-b border-stone-800">
         <div className="p-3 text-center">
-          <p className="text-stone-500 text-xs mb-1">Ratio</p>
-          <p className="text-amber-400 font-bold text-lg">{ratio}:1</p>
-          <p className="text-stone-600 text-xs">{p.coffeeG}g / {p.waterG}g</p>
+          <p className="text-stone-500 text-xs mb-1">Coffee</p>
+          <p className="text-amber-400 font-bold text-lg">{p.coffeeG}g</p>
+          <p className="text-stone-600 text-xs">ratio {ratio}:1</p>
+        </div>
+        <div className="p-3 text-center">
+          <p className="text-stone-500 text-xs mb-1">Water</p>
+          <p className="text-amber-400 font-bold text-lg">{p.waterG}g</p>
+          <p className="text-stone-600 text-xs">{pours.length} pours</p>
         </div>
         <div className="p-3 text-center">
           <p className="text-stone-500 text-xs mb-1">Temp</p>
           <p className="text-amber-400 font-bold text-lg">{p.tempF}°</p>
           <p className="text-stone-600 text-xs">Fahrenheit</p>
-        </div>
-        <div className="p-3 text-center">
-          <p className="text-stone-500 text-xs mb-1">Pours</p>
-          <p className="text-amber-400 font-bold text-lg">{pours.length}</p>
-          <p className="text-stone-600 text-xs">after bloom</p>
         </div>
       </div>
 

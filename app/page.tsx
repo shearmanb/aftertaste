@@ -106,10 +106,10 @@ export default async function DashboardPage() {
         <h2 className="text-stone-400 text-sm font-semibold uppercase tracking-wide mb-3">Quick Access</h2>
         <div className="grid grid-cols-2 gap-3">
           {[
+            { href: "/profiles/water", label: "Water", icon: "≋" },
             { href: "/beans", label: "Beans", icon: "◉" },
             { href: "/profiles/grind", label: "Grind Profiles", icon: "⚙" },
             { href: "/profiles/aiden", label: "Aiden Profiles", icon: "◈" },
-            { href: "/insights", label: "AI Insights", icon: "✦" },
           ].map((item) => (
             <Link
               key={item.href}

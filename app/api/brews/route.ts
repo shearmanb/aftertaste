@@ -22,10 +22,10 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { beanId, grindProfileId, aidenProfileId } = body;
+  const { beanId, waterProfileId, grindProfileId, aidenProfileId } = body;
   const brew = await prisma.brew.create({
-    data: { beanId, grindProfileId, aidenProfileId },
-    include: { bean: true, grindProfile: true, aidenProfile: true },
+    data: { beanId, waterProfileId, grindProfileId, aidenProfileId },
+    include: { bean: true, waterProfile: true, grindProfile: true, aidenProfile: true },
   });
   return NextResponse.json(brew, { status: 201 });
 }

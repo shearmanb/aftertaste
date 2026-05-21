@@ -135,21 +135,28 @@ export default function NewBrewPage() {
       {step === 3 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select Aiden profile</p>
-          <div className="space-y-2 mb-6">
-            {aidenProfiles.map((ap) => (
-              <button
-                key={ap.id}
-                onClick={() => setSelectedAiden(ap)}
-                className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${selectedAiden?.id === ap.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"}`}
-              >
-                <p className="font-semibold text-stone-100">{ap.name}</p>
-                <p className="text-stone-400 text-sm">
-                  {ap.coffeeG}g / {ap.waterG}g · {ap.tempF}°F
-                  <span className="ml-1 text-stone-600">(ratio {(ap.waterG / ap.coffeeG).toFixed(1)}:1)</span>
-                </p>
-              </button>
-            ))}
-          </div>
+          {aidenProfiles.length === 0 ? (
+            <div className="text-center py-10 text-stone-500">
+              <p>No Aiden profiles yet.</p>
+              <a href="/profiles/aiden" className="text-amber-500 underline text-sm mt-1 block">Add an Aiden profile first →</a>
+            </div>
+          ) : (
+            <div className="space-y-2 mb-6">
+              {aidenProfiles.map((ap) => (
+                <button
+                  key={ap.id}
+                  onClick={() => setSelectedAiden(ap)}
+                  className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${selectedAiden?.id === ap.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"}`}
+                >
+                  <p className="font-semibold text-stone-100">{ap.name}</p>
+                  <p className="text-stone-400 text-sm">
+                    {ap.coffeeG}g / {ap.waterG}g · {ap.tempF}°F
+                    <span className="ml-1 text-stone-600">(ratio {(ap.waterG / ap.coffeeG).toFixed(1)}:1)</span>
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
           {selectedAiden && (
             <div className="mb-4">
               <label className="text-stone-400 text-sm block mb-1">Override temp °F (optional)</label>
@@ -163,43 +170,47 @@ export default function NewBrewPage() {
             </div>
           )}
 
-          <div className="mb-4">
-            <label className="text-stone-400 text-sm block mb-1">Water brand (optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. Evian, Third Wave Water, tap"
-              value={waterBrand}
-              onChange={(e) => setWaterBrand(e.target.value)}
-              className="w-full bg-stone-900 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 focus:outline-none focus:border-amber-500"
-            />
-          </div>
-          <div className="mb-6">
-            <label className="text-stone-400 text-sm block mb-1">Additives (optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. CaCl₂ 50mg/L, Epsom salt 20mg/L"
-              value={waterAdditives}
-              onChange={(e) => setWaterAdditives(e.target.value)}
-              className="w-full bg-stone-900 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 focus:outline-none focus:border-amber-500"
-            />
-          </div>
+          {aidenProfiles.length > 0 && (
+            <>
+              <div className="mb-4">
+                <label className="text-stone-400 text-sm block mb-1">Water brand (optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Evian, Third Wave Water, tap"
+                  value={waterBrand}
+                  onChange={(e) => setWaterBrand(e.target.value)}
+                  className="w-full bg-stone-900 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div className="mb-6">
+                <label className="text-stone-400 text-sm block mb-1">Additives (optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. CaCl₂ 50mg/L, Epsom salt 20mg/L"
+                  value={waterAdditives}
+                  onChange={(e) => setWaterAdditives(e.target.value)}
+                  className="w-full bg-stone-900 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 focus:outline-none focus:border-amber-500"
+                />
+              </div>
 
-          <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-1 text-sm">
-            <p className="text-stone-400 font-medium mb-2">Brew summary</p>
-            <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer} — {selectedBean?.name}</p>
-            <p className="text-stone-300"><span className="text-stone-500">Grind:</span> {grindOverride || selectedGrind?.setting}</p>
-            {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}
-            {waterBrand && <p className="text-stone-300"><span className="text-stone-500">Water:</span> {waterBrand}</p>}
-            {waterAdditives && <p className="text-stone-300"><span className="text-stone-500">Additives:</span> {waterAdditives}</p>}
-          </div>
+              <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-1 text-sm">
+                <p className="text-stone-400 font-medium mb-2">Brew summary</p>
+                <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer} — {selectedBean?.name}</p>
+                <p className="text-stone-300"><span className="text-stone-500">Grind:</span> {grindOverride || selectedGrind?.setting}</p>
+                {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}
+                {waterBrand && <p className="text-stone-300"><span className="text-stone-500">Water:</span> {waterBrand}</p>}
+                {waterAdditives && <p className="text-stone-300"><span className="text-stone-500">Additives:</span> {waterAdditives}</p>}
+              </div>
 
-          <button
-            disabled={!selectedAiden || submitting}
-            onClick={submit}
-            className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors"
-          >
-            {submitting ? "Logging..." : "Start Brew →"}
-          </button>
+              <button
+                disabled={!selectedAiden || submitting}
+                onClick={submit}
+                className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors"
+              >
+                {submitting ? "Logging..." : "Start Brew →"}
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

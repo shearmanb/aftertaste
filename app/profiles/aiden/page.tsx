@@ -207,7 +207,6 @@ export default function AidenProfilesPage() {
 
           <input placeholder="Name *" value={name} onChange={(e) => setName(e.target.value)} className="input-field" />
 
-          {/* Coffee + Ratio */}
           <div>
             <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">Coffee</p>
             <div className="grid grid-cols-2 gap-2">
@@ -225,7 +224,6 @@ export default function AidenProfilesPage() {
             )}
           </div>
 
-          {/* Bloom */}
           <div>
             <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">Bloom</p>
             <div className="grid grid-cols-3 gap-2">
@@ -245,7 +243,6 @@ export default function AidenProfilesPage() {
             </div>
           </div>
 
-          {/* Pulses */}
           <div>
             <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">Pulses</p>
             <div className="mb-3">

@@ -139,7 +139,6 @@ export default function BeansPage() {
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-5 mb-5 space-y-4">
           <p className="text-stone-300 font-medium text-sm">{editingId ? "Edit Bean" : "Add Bean"}</p>
 
-          {/* Producer dropdown */}
           <div>
             <label className="text-stone-500 text-xs mb-1 block">Producer *</label>
             {producers.length > 0 && !useNewProducer ? (
@@ -209,7 +208,6 @@ export default function BeansPage() {
             </select>
           </div>
 
-          {/* Tasting notes */}
           <div>
             <label className="text-stone-500 text-xs mb-2 block">Tasting Notes (from bag)</label>
             <div className="flex flex-wrap gap-1.5">
@@ -230,7 +228,6 @@ export default function BeansPage() {
             </div>
           </div>
 
-          {/* Image URL */}
           <div>
             <label className="text-stone-500 text-xs mb-1 block">Label photo URL (optional)</label>
             <input

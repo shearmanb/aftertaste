@@ -4,7 +4,8 @@ import { NextResponse } from "next/server";
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const isAuthRoute = req.nextUrl.pathname.startsWith("/login");
-  const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
+  const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth") ||
+    req.nextUrl.pathname === "/api/health";
 
   if (isApiAuth) return NextResponse.next();
   if (!isLoggedIn && !isAuthRoute) {

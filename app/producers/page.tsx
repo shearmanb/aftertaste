@@ -80,7 +80,10 @@ export default function ProducersPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch("/api/producers").then((r) => r.json()).then(setProducers);
+    fetch("/api/producers")
+      .then((r) => r.ok ? r.json() : [])
+      .then(setProducers)
+      .catch(() => setProducers([]));
   }, []);
 
   function resetForm() {

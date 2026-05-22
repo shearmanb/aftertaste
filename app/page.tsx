@@ -123,6 +123,14 @@ export default async function DashboardPage() {
           ))}
         </div>
       </section>
+
+      <div className="flex justify-end mt-4 pb-2">
+        <p className="text-stone-700 text-xs tabular-nums">
+          {process.env.NEXT_PUBLIC_COMMIT_SHA}
+          {" · "}
+          {new Date(process.env.NEXT_PUBLIC_BUILD_TIME!).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+        </p>
+      </div>
     </AppShell>
   );
 }

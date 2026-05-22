@@ -24,7 +24,7 @@ export default function BrewsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/brews").then((r) => r.json()).then((data) => { setBrews(data); setLoading(false); });
+    fetch("/api/brews").then((r) => r.ok ? r.json() : []).then((data) => { setBrews(data); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
   async function deleteBrew(id: string) {

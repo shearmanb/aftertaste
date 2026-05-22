@@ -10,7 +10,7 @@ type WaterProfile = { id: string; brand: string; additives?: string | null };
 type Bean = { id: string; producer: { name: string }; name: string; roastLevel: string; region?: string | null; process?: string | null };
 type GrindProfile = { id: string; name: string; setting: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number; bloomTimeS: number; bloomWaterG: number; pours: Pour[] };
-type SourceBrew = { brewedAt: string; bean: Bean; waterProfile?: WaterProfile | null; grindProfile: GrindProfile; aidenProfile: AidenProfile };
+type SourceBrew = { brewedAt: string; roastedOn?: string | null; openedOn?: string | null; bean: Bean; waterProfile?: WaterProfile | null; grindProfile: GrindProfile; aidenProfile: AidenProfile };
 
 function NewBrewPageContent() {
   const router = useRouter();
@@ -28,6 +28,8 @@ function NewBrewPageContent() {
   const [selectedGrind, setSelectedGrind] = useState<GrindProfile | null>(null);
   const [selectedAiden, setSelectedAiden] = useState<AidenProfile | null>(null);
   const [sourceBrew, setSourceBrew] = useState<SourceBrew | null>(null);
+  const [roastedOn, setRoastedOn] = useState("");
+  const [openedOn, setOpenedOn] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -52,9 +54,23 @@ function NewBrewPageContent() {
         setSelectedBean(source.bean);
         setSelectedGrind(source.grindProfile);
         setSelectedAiden(source.aidenProfile);
+        if (source.roastedOn) setRoastedOn(source.roastedOn.split("T")[0]);
+        if (source.openedOn) setOpenedOn(source.openedOn.split("T")[0]);
       }
     });
   }, [fromId]);
+
+  useEffect(() => {
+    if (!selectedBean || fromId) return;
+    fetch(`/api/brews?beanId=${selectedBean.id}&limit=1`)
+      .then((r) => r.json())
+      .then((brews) => {
+        if (brews.length > 0) {
+          if (brews[0].roastedOn) setRoastedOn(brews[0].roastedOn.split("T")[0]);
+          if (brews[0].openedOn) setOpenedOn(brews[0].openedOn.split("T")[0]);
+        }
+      });
+  }, [selectedBean, fromId]);
 
   async function submit() {
     setSubmitting(true);
@@ -66,6 +82,8 @@ function NewBrewPageContent() {
         beanId: selectedBean!.id,
         grindProfileId: selectedGrind!.id,
         aidenProfileId: selectedAiden!.id,
+        roastedOn: roastedOn || undefined,
+        openedOn: openedOn || undefined,
       }),
     });
     const brew = await res.json();
@@ -293,6 +311,25 @@ function NewBrewPageContent() {
             <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer.name} — {selectedBean?.name}</p>
             <p className="text-stone-300"><span className="text-stone-500">Grind:</span> {selectedGrind?.setting} (Ode Gen 2)</p>
             {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}
+          </div>
+
+          <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
+            <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Bean Freshness <span className="text-stone-600 normal-case font-normal">(optional)</span></p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Roasted on</label>
+                <input type="date" value={roastedOn} onChange={(e) => setRoastedOn(e.target.value)} className="input-field" />
+              </div>
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Bag opened</label>
+                <input type="date" value={openedOn} onChange={(e) => setOpenedOn(e.target.value)} className="input-field" />
+              </div>
+            </div>
+            {roastedOn && (
+              <p className="text-stone-600 text-xs mt-2">
+                {Math.round((Date.now() - new Date(roastedOn).getTime()) / 86400000)} days since roast
+              </p>
+            )}
           </div>
 
           <button

@@ -58,6 +58,16 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
           <Row label="Ratio" value={`${ratio}:1 (${brew.aidenProfile.coffeeG}g / ${brew.aidenProfile.waterG}g)`} />
           <Row label="Temp" value={`${temp}°F`} />
           <Row label="Bloom" value={`${brew.aidenProfile.bloomWaterG}g / ${brew.aidenProfile.bloomTimeS}s`} />
+          {brew.roastedOn && (
+            <Row label="Roasted" value={format(brew.roastedOn, "MMM d, yyyy")} />
+          )}
+          {brew.openedOn && (
+            <Row label="Bag opened" value={format(brew.openedOn, "MMM d, yyyy")} />
+          )}
+          {brew.roastedOn && (() => {
+            const days = Math.round((new Date(brew.brewedAt).getTime() - new Date(brew.roastedOn!).getTime()) / 86400000);
+            return <Row label="Days from roast" value={`${days} days`} />;
+          })()}
         </div>
 
         {brew.tastingNote ? (

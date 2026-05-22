@@ -66,6 +66,8 @@ model AidenProfile {
 model Brew {
   id             String        @id @default(cuid())
   brewedAt       DateTime      @default(now())
+  roastedOn      DateTime?
+  openedOn       DateTime?
   bean           Bean          @relation(fields: [beanId], references: [id])
   beanId         String
   waterProfile   WaterProfile? @relation(fields: [waterProfileId], references: [id])

@@ -5,10 +5,12 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const limit = parseInt(searchParams.get("limit") ?? "20");
   const skip = parseInt(searchParams.get("skip") ?? "0");
+  const beanId = searchParams.get("beanId") ?? undefined;
 
   const brews = await prisma.brew.findMany({
     take: limit,
     skip,
+    where: beanId ? { beanId } : undefined,
     orderBy: { brewedAt: "desc" },
     include: {
       bean: { include: { producer: true } },
@@ -22,9 +24,13 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { beanId, waterProfileId, grindProfileId, aidenProfileId } = body;
+  const { beanId, waterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn } = body;
   const brew = await prisma.brew.create({
-    data: { beanId, waterProfileId, grindProfileId, aidenProfileId },
+    data: {
+      beanId, waterProfileId, grindProfileId, aidenProfileId,
+      roastedOn: roastedOn ? new Date(roastedOn) : undefined,
+      openedOn: openedOn ? new Date(openedOn) : undefined,
+    },
     include: {
       bean: { include: { producer: true } },
       waterProfile: true,

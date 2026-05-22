@@ -101,11 +101,11 @@ model TastingNote {
   id              String   @id @default(cuid())
   brew            Brew     @relation(fields: [brewId], references: [id], onDelete: Cascade)
   brewId          String   @unique
-  overallScore    Int
-  fruit           Int
-  bitterness      Int
-  chocolate       Int
-  sourness        Int
+  overallScore    Float
+  fruit           Float
+  bitterness      Float
+  chocolate       Float
+  sourness        Float
   drinkingTempF   Int?
   flavorTags      String[]
   confirmedTags   String[]

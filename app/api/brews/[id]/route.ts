@@ -26,19 +26,20 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const { beanId, waterProfileId, filterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn, brewIssues } = await req.json();
+    const body = await req.json();
+    const { beanId, waterProfileId, filterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn, brewIssues } = body;
+    const data: Record<string, unknown> = {};
+    if (beanId !== undefined) data.beanId = beanId;
+    if ("waterProfileId" in body) data.waterProfileId = waterProfileId || null;
+    if ("filterProfileId" in body) data.filterProfileId = filterProfileId || null;
+    if (grindProfileId !== undefined) data.grindProfileId = grindProfileId;
+    if (aidenProfileId !== undefined) data.aidenProfileId = aidenProfileId;
+    if ("roastedOn" in body) data.roastedOn = roastedOn ? new Date(roastedOn) : null;
+    if ("openedOn" in body) data.openedOn = openedOn ? new Date(openedOn) : null;
+    if (brewIssues !== undefined) data.brewIssues = brewIssues;
     const brew = await prisma.brew.update({
       where: { id },
-      data: {
-        beanId,
-        waterProfileId: waterProfileId || null,
-        filterProfileId: filterProfileId || null,
-        grindProfileId,
-        aidenProfileId,
-        roastedOn: roastedOn ? new Date(roastedOn) : null,
-        openedOn: openedOn ? new Date(openedOn) : null,
-        ...(brewIssues !== undefined && { brewIssues }),
-      },
+      data,
       include: {
         bean: { include: { producer: true } },
         waterProfile: true,

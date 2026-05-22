@@ -174,6 +174,22 @@ try {
   await client.query(`ALTER TABLE "Bean" ADD COLUMN IF NOT EXISTS "productUrl" TEXT`);
   console.log("✓ Bean columns");
 
+  await client.query(`
+    DO $$ BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'TastingNote' AND column_name = 'overallScore' AND data_type = 'integer'
+      ) THEN
+        ALTER TABLE "TastingNote" ALTER COLUMN "overallScore" TYPE DOUBLE PRECISION;
+        ALTER TABLE "TastingNote" ALTER COLUMN "fruit"        TYPE DOUBLE PRECISION;
+        ALTER TABLE "TastingNote" ALTER COLUMN "bitterness"   TYPE DOUBLE PRECISION;
+        ALTER TABLE "TastingNote" ALTER COLUMN "chocolate"    TYPE DOUBLE PRECISION;
+        ALTER TABLE "TastingNote" ALTER COLUMN "sourness"     TYPE DOUBLE PRECISION;
+      END IF;
+    END $$
+  `);
+  console.log("✓ TastingNote score columns → DOUBLE PRECISION");
+
   await client.query(`ALTER TABLE "TastingNote" ADD COLUMN IF NOT EXISTS "confirmedTags" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]`);
   await client.query(`ALTER TABLE "TastingNote" ADD COLUMN IF NOT EXISTS "missedTags"    TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]`);
   await client.query(`ALTER TABLE "TastingNote" ADD COLUMN IF NOT EXISTS "bonusTags"     TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]`);

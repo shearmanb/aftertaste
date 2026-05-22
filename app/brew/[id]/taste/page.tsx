@@ -11,6 +11,7 @@ const COMMON_TAGS_FALLBACK = [
 ];
 
 type BrewData = {
+  brewIssues: string[];
   bean: { tastingNotes: string[] };
   tastingNote?: {
     overallScore: number; fruit: number; bitterness: number; chocolate: number; sourness: number;
@@ -26,6 +27,8 @@ export default function TastePage() {
 
   const [commonTags, setCommonTags] = useState<string[]>(COMMON_TAGS_FALLBACK);
   const [bagNotes, setBagNotes] = useState<string[]>([]);
+  const [issueOptions, setIssueOptions] = useState<string[]>([]);
+  const [brewIssues, setBrewIssues] = useState<string[]>([]);
   const [overallScore, setOverallScore] = useState(7);
   const [fruit, setFruit] = useState(3);
   const [strength, setStrength] = useState(3);
@@ -50,12 +53,18 @@ export default function TastePage() {
         if (Array.isArray(data) && data.length > 0)
           setCommonTags(data.map((o: { value: string }) => o.value));
       });
+    fetch("/api/options?category=brewIssue")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setIssueOptions(data.map((o: { value: string }) => o.value));
+      });
   }, []);
 
   useEffect(() => {
     fetch(`/api/brews/${id}`).then((r) => r.json()).then((data: BrewData) => {
       const notes = data.bean?.tastingNotes ?? [];
       setBagNotes(notes);
+      if (Array.isArray(data.brewIssues)) setBrewIssues(data.brewIssues);
 
       if (data.tastingNote) {
         const tn = data.tastingNote;
@@ -110,22 +119,31 @@ export default function TastePage() {
   const missedTags = Object.entries(bagTagStates).filter(([, s]) => s === 2).map(([t]) => t);
   const extraCommonTags = commonTags.filter((t) => !bagNotes.includes(t));
 
+  const scoreDisplay = overallScore % 1 === 0 ? String(overallScore) : String(+overallScore.toFixed(2));
+
   async function submit() {
     setSubmitting(true);
-    await fetch(`/api/brews/${id}/taste`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        overallScore, fruit, bitterness: strength, chocolate, sourness,
-        confirmedTags, missedTags, bonusTags,
-        flavorTags: [...confirmedTags, ...bonusTags],
-        initialThoughts: initialThoughts || undefined,
-        bestPart: bestPart || undefined,
-        worstPart: worstPart || undefined,
-        changesToMake: changesToMake || undefined,
-        wouldBrewAgain,
+    await Promise.all([
+      fetch(`/api/brews/${id}/taste`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          overallScore, fruit, bitterness: strength, chocolate, sourness,
+          confirmedTags, missedTags, bonusTags,
+          flavorTags: [...confirmedTags, ...bonusTags],
+          initialThoughts: initialThoughts || undefined,
+          bestPart: bestPart || undefined,
+          worstPart: worstPart || undefined,
+          changesToMake: changesToMake || undefined,
+          wouldBrewAgain,
+        }),
       }),
-    });
+      fetch(`/api/brews/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brewIssues }),
+      }),
+    ]);
     router.push(`/brew/${id}`);
   }
 
@@ -145,11 +163,11 @@ export default function TastePage() {
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-5">
           <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-4">Overall Score</p>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-5xl font-bold text-amber-400">{overallScore}</span>
+            <span className="text-5xl font-bold text-amber-400">{scoreDisplay}</span>
             <span className="text-stone-500">/10</span>
           </div>
-          <input type="range" min={1} max={10} value={overallScore}
-            onChange={(e) => setOverallScore(parseInt(e.target.value))}
+          <input type="range" min={1} max={10} step={0.25} value={overallScore}
+            onChange={(e) => setOverallScore(parseFloat(e.target.value))}
             className="w-full accent-amber-500 h-3" />
           <div className="flex justify-between text-xs text-stone-600 mt-1">
             <span>Drain it</span><span>Perfect</span>
@@ -159,10 +177,10 @@ export default function TastePage() {
         {/* Flavor dimensions */}
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-5 space-y-5">
           <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">Flavor Dimensions</p>
-          <TastingSlider label="Fruit" value={fruit} onChange={setFruit} lowLabel="Tons" highLabel="None" />
-          <TastingSlider label="Chocolate / Roastness" value={chocolate} onChange={setChocolate} lowLabel="Rich" highLabel="None" />
+          <TastingSlider label="Fruit" value={fruit} onChange={setFruit} lowLabel="None" highLabel="Tons" />
+          <TastingSlider label="Chocolate / Roastness" value={chocolate} onChange={setChocolate} lowLabel="None" highLabel="Rich" />
           <TastingSlider label="Strength" value={strength} onChange={setStrength} lowLabel="Too weak" midLabel="perfect" highLabel="Too strong" />
-          <TastingSlider label="Sourness / Off-flavors" value={sourness} onChange={setSourness} lowLabel="Sharp" highLabel="None" />
+          <TastingSlider label="Sourness / Off-flavors" value={sourness} onChange={setSourness} lowLabel="None" highLabel="Sharp" />
         </div>
 
         {/* Flavor tags */}
@@ -250,6 +268,27 @@ export default function TastePage() {
             </div>
           )}
         </div>
+
+        {/* Brew Issues */}
+        {issueOptions.length > 0 && (
+          <div className="bg-stone-900 border border-stone-800 rounded-xl p-5">
+            <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Brew Issues <span className="text-stone-600 normal-case font-normal">(optional)</span></p>
+            <div className="flex flex-wrap gap-1.5">
+              {issueOptions.map((issue) => {
+                const active = brewIssues.includes(issue);
+                return (
+                  <button
+                    key={issue}
+                    onClick={() => setBrewIssues((prev) => active ? prev.filter((i) => i !== issue) : [...prev, issue])}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${active ? "bg-red-900/60 text-red-300 border border-red-700/60" : "bg-stone-800 text-stone-400 border border-stone-700 hover:border-stone-500"}`}
+                  >
+                    {issue}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Notes */}
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-5 space-y-4">

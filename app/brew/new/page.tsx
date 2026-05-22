@@ -33,14 +33,9 @@ function NewBrewPageContent() {
   const [sourceBrew, setSourceBrew] = useState<SourceBrew | null>(null);
   const [roastedOn, setRoastedOn] = useState("");
   const [openedOn, setOpenedOn] = useState("");
-  const [brewIssues, setBrewIssues] = useState<string[]>([]);
-  const [issueOptions, setIssueOptions] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/options?category=brewIssue").then((r) => r.json()).then((data) => {
-      if (Array.isArray(data)) setIssueOptions(data.map((o: { value: string }) => o.value));
-    });
     const fetches = [
       fetch("/api/profiles/water").then((r) => r.json()),
       fetch("/api/profiles/filter").then((r) => r.json()),
@@ -97,7 +92,6 @@ function NewBrewPageContent() {
           aidenProfileId: selectedAiden!.id,
           roastedOn: roastedOn || undefined,
           openedOn: openedOn || undefined,
-          brewIssues,
         }),
       });
       const brew = await res.json();
@@ -397,26 +391,6 @@ function NewBrewPageContent() {
               </p>
             )}
           </div>
-
-          {issueOptions.length > 0 && (
-            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
-              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Brew Issues <span className="text-stone-600 normal-case font-normal">(optional)</span></p>
-              <div className="flex flex-wrap gap-1.5">
-                {issueOptions.map((issue) => {
-                  const active = brewIssues.includes(issue);
-                  return (
-                    <button
-                      key={issue}
-                      onClick={() => setBrewIssues((prev) => active ? prev.filter((i) => i !== issue) : [...prev, issue])}
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${active ? "bg-red-900/60 text-red-300 border border-red-700/60" : "bg-stone-800 text-stone-400 border border-stone-700 hover:border-stone-500"}`}
-                    >
-                      {issue}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           <button
             disabled={!selectedAiden || submitting}

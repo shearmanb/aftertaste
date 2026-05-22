@@ -160,7 +160,17 @@ try {
       ADD COLUMN IF NOT EXISTS "filterProfileId" TEXT
         REFERENCES "FilterProfile"("id") ON DELETE SET NULL ON UPDATE CASCADE
   `);
-  console.log("✓ Brew.filterProfileId column");
+  await client.query(`ALTER TABLE "Brew" ADD COLUMN IF NOT EXISTS "roastedOn" TIMESTAMP(3)`);
+  await client.query(`ALTER TABLE "Brew" ADD COLUMN IF NOT EXISTS "openedOn" TIMESTAMP(3)`);
+  console.log("✓ Brew columns");
+
+  await client.query(`ALTER TABLE "Bean" ADD COLUMN IF NOT EXISTS "productUrl" TEXT`);
+  console.log("✓ Bean columns");
+
+  await client.query(`ALTER TABLE "TastingNote" ADD COLUMN IF NOT EXISTS "confirmedTags" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]`);
+  await client.query(`ALTER TABLE "TastingNote" ADD COLUMN IF NOT EXISTS "missedTags"    TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]`);
+  await client.query(`ALTER TABLE "TastingNote" ADD COLUMN IF NOT EXISTS "bonusTags"     TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]`);
+  console.log("✓ TastingNote columns");
 
   await client.query(`ALTER TABLE "Bean" ADD COLUMN IF NOT EXISTS "producerId" TEXT`);
   await client.query(`

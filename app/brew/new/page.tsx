@@ -80,21 +80,27 @@ function NewBrewPageContent() {
 
   async function submit() {
     setSubmitting(true);
-    const res = await fetch("/api/brews", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        waterProfileId: selectedWater?.id,
-        filterProfileId: selectedFilter?.id,
-        beanId: selectedBean!.id,
-        grindProfileId: selectedGrind!.id,
-        aidenProfileId: selectedAiden!.id,
-        roastedOn: roastedOn || undefined,
-        openedOn: openedOn || undefined,
-      }),
-    });
-    const brew = await res.json();
-    router.push(`/brew/${brew.id}/taste`);
+    try {
+      const res = await fetch("/api/brews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          waterProfileId: selectedWater?.id,
+          filterProfileId: selectedFilter?.id,
+          beanId: selectedBean!.id,
+          grindProfileId: selectedGrind!.id,
+          aidenProfileId: selectedAiden!.id,
+          roastedOn: roastedOn || undefined,
+          openedOn: openedOn || undefined,
+        }),
+      });
+      const brew = await res.json();
+      if (!res.ok) throw new Error(brew.error ?? `HTTP ${res.status}`);
+      router.push(`/brew/${brew.id}/taste`);
+    } catch (err) {
+      alert(err instanceof Error ? `Save failed: ${err.message}` : "Save failed");
+      setSubmitting(false);
+    }
   }
 
   const totalSteps = 5;

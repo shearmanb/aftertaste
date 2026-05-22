@@ -80,7 +80,7 @@ export default function AidenProfilesPage() {
   const [name, setName] = useState("");
   const [coffeeG, setCoffeeG] = useState("18");
   const [ratio, setRatio] = useState("15");
-  const [bloomRatio, setBloomRatio] = useState("2");
+  const [bloomWaterInput, setBloomWaterInput] = useState("36");
   const [bloomTimeS, setBloomTimeS] = useState("45");
   const [bloomTempF, setBloomTempF] = useState("205");
   const [pulseTemps, setPulseTemps] = useState(["205", "203", "200"]);
@@ -93,7 +93,7 @@ export default function AidenProfilesPage() {
 
   const coffee = parseFloat(coffeeG) || 0;
   const totalWater = Math.round(coffee * (parseFloat(ratio) || 0));
-  const bloomWater = Math.round(coffee * (parseFloat(bloomRatio) || 0));
+  const bloomWater = parseInt(bloomWaterInput) || 0;
 
   function updatePulseTemp(i: number, val: string) {
     setPulseTemps((prev) => prev.map((t, idx) => idx === i ? val : t));
@@ -107,7 +107,7 @@ export default function AidenProfilesPage() {
   }
 
   function resetForm() {
-    setName(""); setCoffeeG("18"); setRatio("15"); setBloomRatio("2");
+    setName(""); setCoffeeG("18"); setRatio("15"); setBloomWaterInput("36");
     setBloomTimeS("45"); setBloomTempF("205");
     setPulseTemps(["205", "203", "200"]); setNotes("");
   }
@@ -118,7 +118,7 @@ export default function AidenProfilesPage() {
     setName(p.name);
     setCoffeeG(String(p.coffeeG));
     setRatio((p.waterG / p.coffeeG).toFixed(1));
-    setBloomRatio((p.bloomWaterG / p.coffeeG).toFixed(1));
+    setBloomWaterInput(String(Math.round(p.bloomWaterG)));
     setBloomTimeS(String(p.bloomTimeS));
     setBloomTempF(String(p.tempF));
     setPulseTemps(pours.length > 0 ? pours.map((pour) => String(pour.tempF)) : ["205"]);
@@ -203,9 +203,11 @@ export default function AidenProfilesPage() {
             <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">Bloom</p>
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
-                <label className="text-stone-500 text-xs mb-1 block">Ratio X : 1</label>
-                <input type="number" step="0.5" value={bloomRatio} onChange={(e) => setBloomRatio(e.target.value)} className="input-field" />
-                {bloomWater > 0 && <p className="text-stone-600 text-xs mt-0.5">{bloomWater}g</p>}
+                <label className="text-stone-500 text-xs mb-1 block">Bloom Water (g)</label>
+                <input type="number" step="1" value={bloomWaterInput} onChange={(e) => setBloomWaterInput(e.target.value)} className="input-field" />
+                {bloomWater > 0 && coffee > 0 && (
+                  <p className="text-stone-600 text-xs mt-0.5">{(bloomWater / coffee).toFixed(1)}× coffee</p>
+                )}
               </div>
               <div>
                 <label className="text-stone-500 text-xs mb-1 block">Time (s)</label>

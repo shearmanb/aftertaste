@@ -95,10 +95,10 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 mb-4">
-              <ScoreBar label="Fruit" value={brew.tastingNote.fruit} />
+              <ScoreBar label="Lack of Fruit" value={brew.tastingNote.fruit} />
               <ScoreBar label="Chocolate" value={brew.tastingNote.chocolate} />
-              <ScoreBar label="Strength" value={brew.tastingNote.bitterness} />
-              <ScoreBar label="Sourness" value={brew.tastingNote.sourness} />
+              <StrengthBar value={brew.tastingNote.bitterness} />
+              <ScoreBar label="Lack of Sourness" value={brew.tastingNote.sourness} />
             </div>
             {(() => {
               const confirmed = (brew.tastingNote as any).confirmedTags as string[] | undefined;
@@ -158,6 +158,40 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between items-baseline text-sm">
       <span className="text-stone-500">{label}</span>
       <span className="text-stone-300">{value}</span>
+    </div>
+  );
+}
+
+function strengthLabel(value: number): string {
+  if (value <= 1.5) return "Way too weak";
+  if (value <= 2.25) return "Too weak";
+  if (value <= 2.75) return "Slightly weak";
+  if (value >= 4.5) return "Way too strong";
+  if (value >= 3.75) return "Too strong";
+  if (value >= 3.25) return "Slightly strong";
+  return "Ideal";
+}
+
+function StrengthBar({ value }: { value: number }) {
+  const isWeak = value < 2.9;
+  const isStrong = value > 3.1;
+  const weakPct = isWeak ? ((3 - value) / 2) * 50 : 0;
+  const strongPct = isStrong ? ((value - 3) / 2) * 50 : 0;
+  return (
+    <div>
+      <div className="flex justify-between text-xs mb-1">
+        <span className="text-stone-500">Strength</span>
+        <span className="text-stone-300 font-medium">{strengthLabel(value)}</span>
+      </div>
+      <div className="h-1.5 bg-stone-800 rounded-full overflow-hidden relative">
+        <div className="absolute left-1/2 top-0 w-px h-full bg-stone-600" />
+        {isWeak && (
+          <div className="h-full bg-sky-600/70 rounded-full absolute" style={{ right: "50%", width: `${weakPct}%` }} />
+        )}
+        {isStrong && (
+          <div className="h-full bg-orange-600/70 rounded-full absolute" style={{ left: "50%", width: `${strongPct}%` }} />
+        )}
+      </div>
     </div>
   );
 }

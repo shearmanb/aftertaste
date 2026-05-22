@@ -65,14 +65,17 @@ export default function BrewsPage() {
                   </p>
                   <p className="text-stone-500 text-xs mt-0.5">
                     {format(new Date(brew.brewedAt), "MMM d, yyyy · h:mm a")}
-                    <span className="text-stone-600"> · {formatDistanceToNow(new Date(brew.brewedAt), { addSuffix: true })}</span>
                   </p>
+                  <p className="text-stone-600 text-xs">{formatDistanceToNow(new Date(brew.brewedAt), { addSuffix: true })}</p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 rounded-full">
                       Grind: {brew.grindProfile.name} ({brew.grindProfile.setting})
                     </span>
                     <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 rounded-full">
                       {brew.aidenProfile.name}
+                    </span>
+                    <span className="bg-stone-800 text-stone-600 text-xs px-2 py-0.5 rounded-full">
+                      {brew.bean.roastLevel}
                     </span>
                   </div>
                   {brew.tastingNote?.flavorTags && brew.tastingNote.flavorTags.length > 0 && (

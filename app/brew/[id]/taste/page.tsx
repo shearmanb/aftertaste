@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import TastingSlider from "@/components/TastingSlider";
+import StrengthSlider from "@/components/StrengthSlider";
 
 const COMMON_TAGS_FALLBACK = [
   "jasmine", "berry", "citrus", "tropical", "stone fruit", "apple",
@@ -177,10 +178,10 @@ export default function TastePage() {
         {/* Flavor dimensions */}
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-5 space-y-5">
           <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">Flavor Dimensions</p>
-          <TastingSlider label="Fruit" value={fruit} onChange={setFruit} lowLabel="None" highLabel="Tons" />
+          <TastingSlider label="Lack of Fruit" value={fruit} onChange={setFruit} lowLabel="None" highLabel="Tons" />
           <TastingSlider label="Chocolate / Roastness" value={chocolate} onChange={setChocolate} lowLabel="None" highLabel="Rich" />
-          <TastingSlider label="Strength" value={strength} onChange={setStrength} lowLabel="Too weak" midLabel="perfect" highLabel="Too strong" />
-          <TastingSlider label="Sourness / Off-flavors" value={sourness} onChange={setSourness} lowLabel="None" highLabel="Sharp" />
+          <StrengthSlider value={strength} onChange={setStrength} />
+          <TastingSlider label="Lack of Sourness / Off-flavors" value={sourness} onChange={setSourness} lowLabel="None" highLabel="Sharp" />
         </div>
 
         {/* Flavor tags */}

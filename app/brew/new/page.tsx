@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import OdeDial from "@/components/OdeDial";
 import { format } from "date-fns";
@@ -12,7 +12,7 @@ type GrindProfile = { id: string; name: string; setting: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number; bloomTimeS: number; bloomWaterG: number; pours: Pour[] };
 type SourceBrew = { brewedAt: string; bean: Bean; waterProfile?: WaterProfile | null; grindProfile: GrindProfile; aidenProfile: AidenProfile };
 
-export default function NewBrewPage() {
+function NewBrewPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromId = searchParams.get("from");
@@ -93,10 +93,9 @@ export default function NewBrewPage() {
         </div>
       </div>
 
-      {/* Branch banner */}
       {sourceBrew && (
         <div className="bg-amber-950/40 border border-amber-800/40 rounded-xl px-4 py-2.5 mb-5 flex items-center gap-2">
-          <span className="text-amber-500 text-sm">⑂</span>
+          <span className="text-amber-500 text-sm">③</span>
           <p className="text-amber-300/80 text-xs">
             Branching from <span className="font-medium text-amber-300">{sourceBrew.bean.producer} — {sourceBrew.bean.name}</span>
             <span className="text-amber-500/60"> · {format(new Date(sourceBrew.brewedAt), "MMM d, yyyy")}</span>
@@ -104,7 +103,6 @@ export default function NewBrewPage() {
         </div>
       )}
 
-      {/* Step 1: Water */}
       {step === 1 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select water</p>
@@ -141,7 +139,6 @@ export default function NewBrewPage() {
         </div>
       )}
 
-      {/* Step 2: Beans */}
       {step === 2 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select beans</p>
@@ -181,7 +178,6 @@ export default function NewBrewPage() {
         </div>
       )}
 
-      {/* Step 3: Grind */}
       {step === 3 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select grind profile</p>
@@ -221,7 +217,6 @@ export default function NewBrewPage() {
         </div>
       )}
 
-      {/* Step 4: Aiden */}
       {step === 4 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select Aiden profile</p>
@@ -292,7 +287,6 @@ export default function NewBrewPage() {
             </div>
           )}
 
-          {/* Summary */}
           <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-1 text-sm">
             <p className="text-stone-400 font-medium mb-2">Brew summary</p>
             {selectedWater && <p className="text-stone-300"><span className="text-stone-500">Water:</span> {selectedWater.brand}{selectedWater.additives ? ` · ${selectedWater.additives}` : ""}</p>}
@@ -311,5 +305,13 @@ export default function NewBrewPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function NewBrewPage() {
+  return (
+    <Suspense>
+      <NewBrewPageContent />
+    </Suspense>
   );
 }

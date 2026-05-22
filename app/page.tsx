@@ -43,7 +43,7 @@ export default async function DashboardPage() {
       {unratedCount > 0 && (
         <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4 mb-4">
           <p className="text-amber-300 text-sm font-medium">
-            You have {unratedCount} unrated brew{unratedCount > 1 ? "s" : ""}.{", "}
+            You have {unratedCount} unrated brew{unratedCount > 1 ? "s" : ""}.{" "}
             <Link href="/brews" className="underline">Rate now →</Link>
           </p>
         </div>
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
                       {brew.bean.producer.name} — {brew.bean.name}
                     </p>
                     <p className="text-stone-500 text-sm mt-0.5">
-                      Grind {brew.grindProfile.setting} ·{", "}
+                      Grind {brew.grindProfile.setting} ·{" "}
                       {formatDistanceToNow(new Date(brew.brewedAt), { addSuffix: true })}
                     </p>
                   </div>
@@ -132,7 +132,7 @@ export default async function DashboardPage() {
           </summary>
           <p className="text-stone-500 text-[10px] tabular-nums text-right mt-0.5 bg-stone-950/80 rounded px-1.5 py-0.5">
             {process.env.NEXT_PUBLIC_COMMIT_SHA}
-            {", "}
+            {" · "}
             {new Date(process.env.NEXT_PUBLIC_BUILD_TIME!).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
           </p>
         </details>

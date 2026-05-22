@@ -33,14 +33,9 @@ function NewBrewPageContent() {
   const [sourceBrew, setSourceBrew] = useState<SourceBrew | null>(null);
   const [roastedOn, setRoastedOn] = useState("");
   const [openedOn, setOpenedOn] = useState("");
-  const [brewIssues, setBrewIssues] = useState<string[]>([]);
-  const [issueOptions, setIssueOptions] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/options?category=brewIssue").then((r) => r.json()).then((data) => {
-      if (Array.isArray(data)) setIssueOptions(data.map((o: { value: string }) => o.value));
-    });
     const fetches = [
       fetch("/api/profiles/water").then((r) => r.json()),
       fetch("/api/profiles/filter").then((r) => r.json()),
@@ -97,7 +92,6 @@ function NewBrewPageContent() {
           aidenProfileId: selectedAiden!.id,
           roastedOn: roastedOn || undefined,
           openedOn: openedOn || undefined,
-          brewIssues,
         }),
       });
       const brew = await res.json();
@@ -140,7 +134,6 @@ function NewBrewPageContent() {
         </div>
       )}
 
-      {/* Step 1: Water */}
       {step === 1 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select water</p>
@@ -153,15 +146,10 @@ function NewBrewPageContent() {
           ) : (
             <div className="space-y-2">
               {waterProfiles.map((w) => (
-                <button
-                  key={w.id}
-                  onClick={() => { setSelectedWater(w); setStep(2); }}
+                <button key={w.id} onClick={() => { setSelectedWater(w); setStep(2); }}
                   className={`w-full text-left rounded-xl p-4 border transition-colors ${
-                    selectedWater?.id === w.id
-                      ? "border-amber-500 bg-stone-900"
-                      : "bg-stone-900 border-stone-800 hover:border-amber-600"
-                  }`}
-                >
+                    selectedWater?.id === w.id ? "border-amber-500 bg-stone-900" : "bg-stone-900 border-stone-800 hover:border-amber-600"
+                  }`}>
                   <p className="font-semibold text-stone-100">{w.brand}</p>
                   {w.additives && <p className="text-stone-400 text-sm">{w.additives}</p>}
                   {selectedWater?.id === w.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
@@ -170,14 +158,11 @@ function NewBrewPageContent() {
             </div>
           )}
           {selectedWater && (
-            <button onClick={() => setStep(2)} className="w-full mt-4 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">
-              Next →
-            </button>
+            <button onClick={() => setStep(2)} className="w-full mt-4 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">Next →</button>
           )}
         </div>
       )}
 
-      {/* Step 2: Filter */}
       {step === 2 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select filter <span className="text-stone-600 font-normal">(optional)</span></p>
@@ -190,36 +175,26 @@ function NewBrewPageContent() {
           ) : (
             <div className="space-y-2">
               {filterProfiles.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => { setSelectedFilter(f); setStep(3); }}
+                <button key={f.id} onClick={() => { setSelectedFilter(f); setStep(3); }}
                   className={`w-full text-left rounded-xl p-4 border transition-colors ${
-                    selectedFilter?.id === f.id
-                      ? "border-amber-500 bg-stone-900"
-                      : "bg-stone-900 border-stone-800 hover:border-amber-600"
-                  }`}
-                >
+                    selectedFilter?.id === f.id ? "border-amber-500 bg-stone-900" : "bg-stone-900 border-stone-800 hover:border-amber-600"
+                  }`}>
                   <p className="font-semibold text-stone-100">{f.name}</p>
                   {selectedFilter?.id === f.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
                 </button>
               ))}
             </div>
           )}
-          <button
-            onClick={() => { setSelectedFilter(null); setStep(3); }}
-            className="w-full mt-4 py-3 bg-stone-800 hover:bg-stone-700 text-stone-400 font-medium rounded-xl transition-colors"
-          >
+          <button onClick={() => { setSelectedFilter(null); setStep(3); }}
+            className="w-full mt-4 py-3 bg-stone-800 hover:bg-stone-700 text-stone-400 font-medium rounded-xl transition-colors">
             Skip (no filter)
           </button>
           {selectedFilter && (
-            <button onClick={() => setStep(3)} className="w-full mt-2 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">
-              Next →
-            </button>
+            <button onClick={() => setStep(3)} className="w-full mt-2 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">Next →</button>
           )}
         </div>
       )}
 
-      {/* Step 3: Beans */}
       {step === 3 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select beans</p>
@@ -231,122 +206,83 @@ function NewBrewPageContent() {
           ) : (
             <div className="space-y-2">
               {beans.map((bean) => (
-                <button
-                  key={bean.id}
-                  onClick={() => { setSelectedBean(bean); setStep(4); }}
+                <button key={bean.id} onClick={() => { setSelectedBean(bean); setStep(4); }}
                   className={`w-full text-left rounded-xl p-4 border transition-colors ${
-                    selectedBean?.id === bean.id
-                      ? "border-amber-500 bg-stone-900"
-                      : "bg-stone-900 border-stone-800 hover:border-amber-600"
-                  }`}
-                >
+                    selectedBean?.id === bean.id ? "border-amber-500 bg-stone-900" : "bg-stone-900 border-stone-800 hover:border-amber-600"
+                  }`}>
                   <p className="font-semibold text-stone-100">{bean.producer?.name}</p>
-                  <p className="text-stone-400 text-sm">
-                    {bean.name} · {bean.roastLevel}
-                    {bean.region ? ` · ${bean.region}` : ""}
-                    {bean.process ? ` · ${bean.process}` : ""}
-                  </p>
+                  <p className="text-stone-400 text-sm">{bean.name} · {bean.roastLevel}{bean.region ? ` · ${bean.region}` : ""}{bean.process ? ` · ${bean.process}` : ""}</p>
                   {selectedBean?.id === bean.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
                 </button>
               ))}
             </div>
           )}
           {selectedBean && (
-            <button onClick={() => setStep(4)} className="w-full mt-4 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">
-              Next →
-            </button>
+            <button onClick={() => setStep(4)} className="w-full mt-4 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">Next →</button>
           )}
         </div>
       )}
 
-      {/* Step 4: Grind */}
       {step === 4 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select grind profile</p>
           <div className="space-y-2 mb-4">
             {grindProfiles.map((gp) => (
-              <button
-                key={gp.id}
-                onClick={() => setSelectedGrind(gp)}
+              <button key={gp.id} onClick={() => setSelectedGrind(gp)}
                 className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${
                   selectedGrind?.id === gp.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"
-                }`}
-              >
+                }`}>
                 <p className="font-semibold text-stone-100">{gp.name}</p>
                 <p className="text-stone-400 text-sm">Setting {gp.setting}</p>
                 {selectedGrind?.id === gp.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
               </button>
             ))}
           </div>
-
           {selectedGrind && (
             <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
               <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-3 text-center">Dial Confirmation</p>
               <OdeDial setting={selectedGrind.setting} />
-              <p className="text-stone-400 text-sm text-center mt-2">
-                Set Fellow Ode Gen 2 to <span className="text-amber-400 font-bold">{selectedGrind.setting}</span>
-              </p>
+              <p className="text-stone-400 text-sm text-center mt-2">Set Fellow Ode Gen 2 to <span className="text-amber-400 font-bold">{selectedGrind.setting}</span></p>
             </div>
           )}
-
-          <button
-            disabled={!selectedGrind}
-            onClick={() => setStep(5)}
-            className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors"
-          >
+          <button disabled={!selectedGrind} onClick={() => setStep(5)}
+            className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors">
             Next →
           </button>
         </div>
       )}
 
-      {/* Step 5: Aiden */}
       {step === 5 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select Aiden profile</p>
           <div className="space-y-2 mb-4">
             {aidenProfiles.map((ap) => (
-              <button
-                key={ap.id}
-                onClick={() => setSelectedAiden(ap)}
+              <button key={ap.id} onClick={() => setSelectedAiden(ap)}
                 className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${
                   selectedAiden?.id === ap.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"
-                }`}
-              >
+                }`}>
                 <p className="font-semibold text-stone-100">{ap.name}</p>
-                <p className="text-stone-400 text-sm">
-                  {ap.coffeeG}g / {ap.waterG}g · {ap.tempF}°F
+                <p className="text-stone-400 text-sm">{ap.coffeeG}g / {ap.waterG}g · {ap.tempF}°F
                   <span className="ml-1 text-stone-600">(ratio {(ap.waterG / ap.coffeeG).toFixed(1)}:1)</span>
                 </p>
                 {selectedAiden?.id === ap.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
               </button>
             ))}
           </div>
-
           {selectedAiden && (
             <div className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden mb-4">
               <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide px-4 pt-4 pb-2">Aiden Settings</p>
               <div className="grid grid-cols-3 divide-x divide-stone-800 border-y border-stone-800">
-                <div className="p-3 text-center">
-                  <p className="text-stone-500 text-xs mb-0.5">Coffee</p>
-                  <p className="text-amber-400 font-bold">{selectedAiden.coffeeG}g</p>
-                </div>
-                <div className="p-3 text-center">
-                  <p className="text-stone-500 text-xs mb-0.5">Water</p>
-                  <p className="text-amber-400 font-bold">{selectedAiden.waterG}g</p>
-                </div>
-                <div className="p-3 text-center">
-                  <p className="text-stone-500 text-xs mb-0.5">Temp</p>
-                  <p className="text-amber-400 font-bold">{selectedAiden.tempF}°F</p>
-                </div>
+                <div className="p-3 text-center"><p className="text-stone-500 text-xs mb-0.5">Coffee</p><p className="text-amber-400 font-bold">{selectedAiden.coffeeG}g</p></div>
+                <div className="p-3 text-center"><p className="text-stone-500 text-xs mb-0.5">Water</p><p className="text-amber-400 font-bold">{selectedAiden.waterG}g</p></div>
+                <div className="p-3 text-center"><p className="text-stone-500 text-xs mb-0.5">Temp</p><p className="text-amber-400 font-bold">{selectedAiden.tempF}°F</p></div>
               </div>
               <div className="p-4 space-y-2">
                 <div className="flex items-center gap-3">
                   <span className="text-stone-500 text-xs w-14 shrink-0">Bloom</span>
                   <div className="flex-1 bg-stone-800 rounded-full h-5 overflow-hidden">
-                    <div
-                      className="h-full bg-teal-700 rounded-full flex items-center justify-end pr-2"
-                      style={{ width: `${Math.min(100, (selectedAiden.bloomWaterG / selectedAiden.waterG) * 100)}%` }}
-                    >
+                    <div className="h-full bg-teal-700 rounded-full flex items-center justify-end pr-2"
+                      style={{ width: `${Math.min(100, (selectedAiden.bloomWaterG / selectedAiden.waterG) * 100)}%` }}>
                       <span className="text-white text-xs">{selectedAiden.bloomWaterG}g</span>
                     </div>
                   </div>
@@ -356,10 +292,8 @@ function NewBrewPageContent() {
                   <div key={pour.sequence} className="flex items-center gap-3">
                     <span className="text-stone-500 text-xs w-14 shrink-0">Pour {pour.sequence}</span>
                     <div className="flex-1 bg-stone-800 rounded-full h-5 overflow-hidden">
-                      <div
-                        className="h-full bg-amber-700 rounded-full flex items-center justify-end pr-2"
-                        style={{ width: `${Math.min(100, (pour.waterG / selectedAiden.waterG) * 100)}%` }}
-                      >
+                      <div className="h-full bg-amber-700 rounded-full flex items-center justify-end pr-2"
+                        style={{ width: `${Math.min(100, (pour.waterG / selectedAiden.waterG) * 100)}%` }}>
                         <span className="text-white text-xs">{pour.waterG}g</span>
                       </div>
                     </div>
@@ -369,7 +303,6 @@ function NewBrewPageContent() {
               </div>
             </div>
           )}
-
           <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-1 text-sm">
             <p className="text-stone-400 font-medium mb-2">Brew summary</p>
             {selectedWater && <p className="text-stone-300"><span className="text-stone-500">Water:</span> {selectedWater.brand}{selectedWater.additives ? ` · ${selectedWater.additives}` : ""}</p>}
@@ -378,7 +311,6 @@ function NewBrewPageContent() {
             <p className="text-stone-300"><span className="text-stone-500">Grind:</span> {selectedGrind?.setting} (Ode Gen 2)</p>
             {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}
           </div>
-
           <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
             <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Bean Freshness <span className="text-stone-600 normal-case font-normal">(optional)</span></p>
             <div className="grid grid-cols-2 gap-3">
@@ -392,37 +324,11 @@ function NewBrewPageContent() {
               </div>
             </div>
             {roastedOn && (
-              <p className="text-stone-600 text-xs mt-2">
-                {Math.round((Date.now() - new Date(roastedOn).getTime()) / 86400000)} days since roast
-              </p>
+              <p className="text-stone-600 text-xs mt-2">{Math.round((Date.now() - new Date(roastedOn).getTime()) / 86400000)} days since roast</p>
             )}
           </div>
-
-          {issueOptions.length > 0 && (
-            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
-              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Brew Issues <span className="text-stone-600 normal-case font-normal">(optional)</span></p>
-              <div className="flex flex-wrap gap-1.5">
-                {issueOptions.map((issue) => {
-                  const active = brewIssues.includes(issue);
-                  return (
-                    <button
-                      key={issue}
-                      onClick={() => setBrewIssues((prev) => active ? prev.filter((i) => i !== issue) : [...prev, issue])}
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${active ? "bg-red-900/60 text-red-300 border border-red-700/60" : "bg-stone-800 text-stone-400 border border-stone-700 hover:border-stone-500"}`}
-                    >
-                      {issue}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <button
-            disabled={!selectedAiden || submitting}
-            onClick={submit}
-            className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors"
-          >
+          <button disabled={!selectedAiden || submitting} onClick={submit}
+            className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors">
             {submitting ? "Logging..." : fromId ? "Branch →" : "Start Brew →"}
           </button>
         </div>

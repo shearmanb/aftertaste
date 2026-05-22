@@ -26,15 +26,10 @@ export default function EditBrewPage() {
   const [aidenProfileId, setAidenProfileId] = useState<string>("");
   const [roastedOn, setRoastedOn] = useState("");
   const [openedOn, setOpenedOn] = useState("");
-  const [brewIssues, setBrewIssues] = useState<string[]>([]);
-  const [issueOptions, setIssueOptions] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/options?category=brewIssue").then((r) => r.json()).then((data) => {
-      if (Array.isArray(data)) setIssueOptions(data.map((o: { value: string }) => o.value));
-    });
     Promise.all([
       fetch(`/api/brews/${id}`).then((r) => r.json()),
       fetch("/api/profiles/water").then((r) => r.json()),
@@ -50,7 +45,6 @@ export default function EditBrewPage() {
       setAidenProfileId(brew.aidenProfileId);
       if (brew.roastedOn) setRoastedOn(brew.roastedOn.split("T")[0]);
       if (brew.openedOn) setOpenedOn(brew.openedOn.split("T")[0]);
-      if (Array.isArray(brew.brewIssues)) setBrewIssues(brew.brewIssues);
       setWaterProfiles(Array.isArray(water) ? water : []);
       setFilterProfiles(Array.isArray(filter) ? filter : []);
       setBeans(Array.isArray(beansData) ? beansData : []);
@@ -73,7 +67,6 @@ export default function EditBrewPage() {
         aidenProfileId,
         roastedOn: roastedOn || null,
         openedOn: openedOn || null,
-        brewIssues,
       }),
     });
     router.push(`/brew/${id}`);
@@ -89,9 +82,7 @@ export default function EditBrewPage() {
         <button onClick={() => router.back()} className="text-stone-400 hover:text-stone-200 text-2xl leading-none">‹</button>
         <h1 className="text-xl font-bold text-stone-100">Edit Brew</h1>
       </div>
-
       <div className="space-y-5">
-        {/* Water */}
         <div>
           <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Water</label>
           <div className="space-y-2">
@@ -104,13 +95,9 @@ export default function EditBrewPage() {
             ))}
           </div>
         </div>
-
-        {/* Filter */}
         {filterProfiles.length > 0 && (
           <div>
-            <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">
-              Filter <span className="text-stone-600 normal-case font-normal">(optional)</span>
-            </label>
+            <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Filter <span className="text-stone-600 normal-case font-normal">(optional)</span></label>
             <div className="space-y-2">
               {filterProfiles.map((f) => (
                 <button key={f.id} onClick={() => setFilterProfileId(filterProfileId === f.id ? "" : f.id)}
@@ -121,8 +108,6 @@ export default function EditBrewPage() {
             </div>
           </div>
         )}
-
-        {/* Beans */}
         <div>
           <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Beans</label>
           <div className="space-y-2">
@@ -135,8 +120,6 @@ export default function EditBrewPage() {
             ))}
           </div>
         </div>
-
-        {/* Grind */}
         <div>
           <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Grind Profile</label>
           <div className="space-y-2">
@@ -149,8 +132,6 @@ export default function EditBrewPage() {
             ))}
           </div>
         </div>
-
-        {/* Aiden */}
         <div>
           <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Aiden Profile</label>
           <div className="space-y-2">
@@ -163,8 +144,6 @@ export default function EditBrewPage() {
             ))}
           </div>
         </div>
-
-        {/* Bean freshness */}
         <div>
           <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Bean Freshness <span className="text-stone-600 normal-case font-normal">(optional)</span></label>
           <div className="grid grid-cols-2 gap-3">
@@ -178,28 +157,6 @@ export default function EditBrewPage() {
             </div>
           </div>
         </div>
-
-        {/* Brew Issues */}
-        {issueOptions.length > 0 && (
-          <div>
-            <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Brew Issues <span className="text-stone-600 normal-case font-normal">(optional)</span></label>
-            <div className="flex flex-wrap gap-1.5">
-              {issueOptions.map((issue) => {
-                const active = brewIssues.includes(issue);
-                return (
-                  <button
-                    key={issue}
-                    onClick={() => setBrewIssues((prev) => active ? prev.filter((i) => i !== issue) : [...prev, issue])}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${active ? "bg-red-900/60 text-red-300 border border-red-700/60" : "bg-stone-800 text-stone-400 border border-stone-700 hover:border-stone-500"}`}
-                  >
-                    {issue}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         <button onClick={save} disabled={saving || !beanId || !grindProfileId || !aidenProfileId}
           className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors">
           {saving ? "Saving..." : "Save changes"}

@@ -19,18 +19,6 @@ type Bean = {
   notes?: string | null;
 };
 
-const ROAST_LEVELS = ["light", "medium-light", "medium", "medium-dark", "dark"];
-const PROCESSES = ["Washed", "Natural", "Honey", "Anaerobic Natural", "Anaerobic Washed", "Wet-Hulled", "Other"];
-const BEAN_TASTING_NOTES = [
-  "blueberry", "strawberry", "raspberry", "cherry", "stone fruit", "peach",
-  "mango", "tropical", "passionfruit", "citrus", "lemon", "orange", "grapefruit",
-  "jasmine", "rose", "floral", "lavender",
-  "caramel", "brown sugar", "honey", "chocolate", "dark chocolate", "vanilla", "maple",
-  "hazelnut", "almond", "nutty",
-  "cinnamon", "cardamom",
-  "bright", "clean", "complex", "juicy", "tea-like", "earthy", "smoky", "wine",
-];
-
 function compressImage(file: File): Promise<string> {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -55,6 +43,9 @@ function compressImage(file: File): Promise<string> {
 export default function BeansPage() {
   const [beans, setBeans] = useState<Bean[]>([]);
   const [producers, setProducers] = useState<Producer[]>([]);
+  const [roastLevels, setRoastLevels] = useState<string[]>([]);
+  const [processes, setProcesses] = useState<string[]>([]);
+  const [beanTastingNotes, setBeanTastingNotes] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,7 +53,7 @@ export default function BeansPage() {
   const [producerId, setProducerId] = useState("");
   const [name, setName] = useState("");
   const [region, setRegion] = useState("");
-  const [roastLevel, setRoastLevel] = useState("medium-light");
+  const [roastLevel, setRoastLevel] = useState("");
   const [process, setProcess] = useState("");
   const [tastingNotes, setTastingNotes] = useState<string[]>([]);
   const [imageUrl, setImageUrl] = useState("");
@@ -75,21 +66,28 @@ export default function BeansPage() {
     Promise.all([
       fetch("/api/beans").then((r) => r.ok ? r.json() : []),
       fetch("/api/producers").then((r) => r.ok ? r.json() : []),
-    ]).then(([beansData, producersData]) => {
-      setBeans(beansData);
-      setProducers(producersData);
+      fetch("/api/options?category=roastLevel").then((r) => r.ok ? r.json() : []),
+      fetch("/api/options?category=process").then((r) => r.ok ? r.json() : []),
+      fetch("/api/options?category=beanTastingNote").then((r) => r.ok ? r.json() : []),
+    ]).then(([beansData, producersData, roastData, processData, noteData]) => {
+      setBeans(Array.isArray(beansData) ? beansData : []);
+      setProducers(Array.isArray(producersData) ? producersData : []);
+      const roasts = Array.isArray(roastData) ? roastData.map((o: { value: string }) => o.value) : [];
+      setRoastLevels(roasts);
+      if (roasts.length > 0) setRoastLevel(roasts[0]);
+      setProcesses(Array.isArray(processData) ? processData.map((o: { value: string }) => o.value) : []);
+      setBeanTastingNotes(Array.isArray(noteData) ? noteData.map((o: { value: string }) => o.value) : []);
     }).catch(() => {});
   }, []);
 
   function toggleNote(note: string) {
-    setTastingNotes((prev) =>
-      prev.includes(note) ? prev.filter((n) => n !== note) : [...prev, note]
-    );
+    setTastingNotes((prev) => prev.includes(note) ? prev.filter((n) => n !== note) : [...prev, note]);
   }
 
   function resetForm() {
-    setProducerId(""); setName(""); setRegion(""); setRoastLevel("medium-light"); setProcess("");
-    setTastingNotes([]); setImageUrl(""); setImagePreview(null); setProductUrl(""); setNotes("");
+    setProducerId(""); setName(""); setRegion("");
+    setRoastLevel(roastLevels[0] ?? "");
+    setProcess(""); setTastingNotes([]); setImageUrl(""); setImagePreview(null); setProductUrl(""); setNotes("");
   }
 
   function openEdit(bean: Bean) {
@@ -124,8 +122,7 @@ export default function BeansPage() {
     setSaving(true);
     try {
       const payload = {
-        producerId,
-        name,
+        producerId, name,
         region: region || undefined,
         roastLevel,
         process: process || undefined,
@@ -141,7 +138,10 @@ export default function BeansPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+        if (!res.ok) {
+          const json = await res.json().catch(() => null);
+          throw new Error(json?.error ?? `HTTP ${res.status}`);
+        }
         const updated = await res.json();
         setBeans((prev) => prev.map((b) => b.id === editingId ? updated : b));
       } else {
@@ -150,14 +150,17 @@ export default function BeansPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+        if (!res.ok) {
+          const json = await res.json().catch(() => null);
+          throw new Error(json?.error ?? `HTTP ${res.status}`);
+        }
         const bean = await res.json();
         setBeans((prev) => [...prev, bean]);
       }
       closeForm();
     } catch (err) {
       console.error(err);
-      alert("Save failed — check your connection and try again.");
+      alert(err instanceof Error ? `Save failed: ${err.message}` : "Save failed — check your connection and try again.");
     } finally {
       setSaving(false);
     }
@@ -213,7 +216,7 @@ export default function BeansPage() {
               <label className="text-stone-500 text-xs mb-1 block">Process</label>
               <select value={process} onChange={(e) => setProcess(e.target.value)} className="input-field">
                 <option value="">Select...</option>
-                {PROCESSES.map((p) => <option key={p} value={p}>{p}</option>)}
+                {processes.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
           </div>
@@ -221,19 +224,27 @@ export default function BeansPage() {
           <div>
             <label className="text-stone-500 text-xs mb-1 block">Roast Level</label>
             <select value={roastLevel} onChange={(e) => setRoastLevel(e.target.value)} className="input-field">
-              {ROAST_LEVELS.map((r) => <option key={r} value={r}>{r}</option>)}
+              {roastLevels.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="text-stone-500 text-xs mb-2 block">Tasting Notes (from bag)</label>
-            <div className="flex flex-wrap gap-1.5">
-              {BEAN_TASTING_NOTES.map((note) => (
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-stone-500 text-xs">Tasting Notes (from bag)</label>
+              <Link href="/admin" className="text-stone-600 text-[10px] hover:text-amber-500">edit list →</Link>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {beanTastingNotes.map((note) => (
                 <button key={note} type="button" onClick={() => toggleNote(note)}
-                  className={`px-2.5 py-1 rounded-full text-xs transition-colors ${tastingNotes.includes(note) ? "bg-amber-600 text-white" : "bg-stone-800 text-stone-400 hover:bg-stone-700"}`}>
+                  className={`px-2 py-0.5 rounded-full text-[11px] transition-colors ${tastingNotes.includes(note) ? "bg-amber-600 text-white" : "bg-stone-800 text-stone-400 hover:bg-stone-700"}`}>
                   {note}
                 </button>
               ))}
+              {beanTastingNotes.length === 0 && (
+                <p className="text-stone-600 text-xs italic">
+                  No tags yet — <Link href="/admin" className="text-amber-600 hover:text-amber-500">add in Control Panel</Link>
+                </p>
+              )}
             </div>
           </div>
 

@@ -13,7 +13,7 @@ type Producer = {
   _count?: { beans: number };
 };
 
-function ProducerCard({ p, onEdit }: { p: Producer; onEdit: (p: Producer) => void }) {
+function ProducerCard({ p, onEdit, onDelete }: { p: Producer; onEdit: (p: Producer) => void; onDelete: (p: Producer) => void }) {
   return (
     <div className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
       <div className="px-4 pt-4 pb-3 border-b border-stone-800 flex items-center justify-between gap-2">
@@ -39,6 +39,11 @@ function ProducerCard({ p, onEdit }: { p: Producer; onEdit: (p: Producer) => voi
               </svg>
             </a>
           )}
+          <button onClick={() => onDelete(p)} className="p-1.5 text-stone-500 hover:text-red-400 transition-colors" aria-label="Delete producer">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
           <button onClick={() => onEdit(p)} className="p-1.5 text-stone-500 hover:text-stone-300 transition-colors" aria-label="Edit producer">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -150,6 +155,20 @@ export default function ProducersPage() {
     }
   }
 
+  async function deleteProducer(p: Producer) {
+    if (!window.confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/producers/${p.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        throw new Error(detail.error ?? `HTTP ${res.status}`);
+      }
+      setProducers((prev) => prev.filter((x) => x.id !== p.id));
+    } catch (err) {
+      alert(`Delete failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   const formVisible = showForm || editingId !== null;
 
   return (
@@ -206,7 +225,7 @@ export default function ProducersPage() {
       <div className="space-y-4">
         {producers.map((p) => (
           <div key={p.id} className={`rounded-xl transition-colors ${editingId === p.id ? "ring-1 ring-amber-600/60" : ""}`}>
-            <ProducerCard p={p} onEdit={openEdit} />
+            <ProducerCard p={p} onEdit={openEdit} onDelete={deleteProducer} />
           </div>
         ))}
         {producers.length === 0 && !formVisible && (

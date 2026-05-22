@@ -28,6 +28,10 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     await prisma.producer.delete({ where: { id } });
     return new NextResponse(null, { status: 204 });
   } catch (err) {
+    const code = (err as { code?: string }).code;
+    if (code === "P2003" || code === "P2014") {
+      return NextResponse.json({ error: "Cannot delete: producer has beans or brews attached." }, { status: 409 });
+    }
     console.error("DELETE /api/producers/[id]:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

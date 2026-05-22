@@ -119,7 +119,10 @@ export default function ProducersPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+        if (!res.ok) {
+          const detail = await res.json().catch(() => ({}));
+          throw new Error(detail.error ?? `HTTP ${res.status}`);
+        }
         const updated = await res.json();
         setProducers((prev) => prev.map((p) => p.id === editingId ? { ...updated, _count: p._count } : p));
       } else {
@@ -128,14 +131,17 @@ export default function ProducersPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+        if (!res.ok) {
+          const detail = await res.json().catch(() => ({}));
+          throw new Error(detail.error ?? `HTTP ${res.status}`);
+        }
         const producer = await res.json();
         setProducers((prev) => [...prev, { ...producer, _count: { beans: 0 } }]);
       }
       closeForm();
     } catch (err) {
       console.error(err);
-      alert("Save failed — check your connection and try again.");
+      alert(`Save failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSaving(false);
     }

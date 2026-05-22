@@ -2,41 +2,50 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const limit = parseInt(searchParams.get("limit") ?? "20");
-  const skip = parseInt(searchParams.get("skip") ?? "0");
-  const beanId = searchParams.get("beanId") ?? undefined;
+  try {
+    const { searchParams } = new URL(req.url);
+    const limit = parseInt(searchParams.get("limit") ?? "20");
+    const skip = parseInt(searchParams.get("skip") ?? "0");
+    const beanId = searchParams.get("beanId") ?? undefined;
 
-  const brews = await prisma.brew.findMany({
-    take: limit,
-    skip,
-    where: beanId ? { beanId } : undefined,
-    orderBy: { brewedAt: "desc" },
-    include: {
-      bean: { include: { producer: true } },
-      grindProfile: true,
-      aidenProfile: true,
-      tastingNote: true,
-    },
-  });
-  return NextResponse.json(brews);
+    const brews = await prisma.brew.findMany({
+      take: limit,
+      skip,
+      where: beanId ? { beanId } : undefined,
+      orderBy: { brewedAt: "desc" },
+      include: {
+        bean: { include: { producer: true } },
+        grindProfile: true,
+        aidenProfile: true,
+        tastingNote: true,
+      },
+    });
+    return NextResponse.json(brews);
+  } catch (err) {
+    console.error("GET /api/brews:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const { beanId, waterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn } = body;
-  const brew = await prisma.brew.create({
-    data: {
-      beanId, waterProfileId, grindProfileId, aidenProfileId,
-      roastedOn: roastedOn ? new Date(roastedOn) : undefined,
-      openedOn: openedOn ? new Date(openedOn) : undefined,
-    },
-    include: {
-      bean: { include: { producer: true } },
-      waterProfile: true,
-      grindProfile: true,
-      aidenProfile: true,
-    },
-  });
-  return NextResponse.json(brew, { status: 201 });
+  try {
+    const { beanId, waterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn } = await req.json();
+    const brew = await prisma.brew.create({
+      data: {
+        beanId, waterProfileId, grindProfileId, aidenProfileId,
+        roastedOn: roastedOn ? new Date(roastedOn) : undefined,
+        openedOn: openedOn ? new Date(openedOn) : undefined,
+      },
+      include: {
+        bean: { include: { producer: true } },
+        waterProfile: true,
+        grindProfile: true,
+        aidenProfile: true,
+      },
+    });
+    return NextResponse.json(brew, { status: 201 });
+  } catch (err) {
+    console.error("POST /api/brews:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }

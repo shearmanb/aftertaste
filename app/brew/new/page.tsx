@@ -44,10 +44,10 @@ function NewBrewPageContent() {
       : Promise.resolve(null);
 
     Promise.all([...fetches, sourcePromise]).then(([water, beansData, grind, aiden, source]) => {
-      setWaterProfiles(water);
-      setBeans(beansData);
-      setGrindProfiles(grind);
-      setAidenProfiles(aiden);
+      setWaterProfiles(Array.isArray(water) ? water : []);
+      setBeans(Array.isArray(beansData) ? beansData : []);
+      setGrindProfiles(Array.isArray(grind) ? grind : []);
+      setAidenProfiles(Array.isArray(aiden) ? aiden : []);
       if (source) {
         setSourceBrew(source);
         if (source.waterProfile) setSelectedWater(source.waterProfile);
@@ -65,7 +65,7 @@ function NewBrewPageContent() {
     fetch(`/api/brews?beanId=${selectedBean.id}&limit=1`)
       .then((r) => r.json())
       .then((brews) => {
-        if (brews.length > 0) {
+        if (Array.isArray(brews) && brews.length > 0) {
           if (brews[0].roastedOn) setRoastedOn(brews[0].roastedOn.split("T")[0]);
           if (brews[0].openedOn) setOpenedOn(brews[0].openedOn.split("T")[0]);
         }

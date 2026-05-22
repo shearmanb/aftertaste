@@ -176,6 +176,13 @@ try {
   `);
   console.log("✓ Bean.producerId column");
 
+  // Remove orphan beans/brews from before the Producer refactor, then drop the old blocking column
+  await client.query(`DELETE FROM "TastingNote" WHERE "brewId" IN (SELECT "id" FROM "Brew" WHERE "beanId" IN (SELECT "id" FROM "Bean" WHERE "producerId" IS NULL))`);
+  await client.query(`DELETE FROM "Brew" WHERE "beanId" IN (SELECT "id" FROM "Bean" WHERE "producerId" IS NULL)`);
+  await client.query(`DELETE FROM "Bean" WHERE "producerId" IS NULL`);
+  await client.query(`ALTER TABLE "Bean" DROP COLUMN IF EXISTS "producer"`);
+  console.log("✓ Bean cleanup: orphan rows removed, old producer column dropped");
+
   for (const [category, value] of SEED) {
     await client.query(
       `INSERT INTO "DropdownOption" ("id", "category", "value") VALUES ($1, $2, $3) ON CONFLICT ("category", "value") DO NOTHING`,

@@ -16,6 +16,7 @@ model Bean {
   process      String?
   tastingNotes String[]
   imageUrl     String?
+  productUrl   String?
   notes        String?
   createdAt    DateTime @default(now())
   brews        Brew[]

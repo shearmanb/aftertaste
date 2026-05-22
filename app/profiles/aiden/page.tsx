@@ -3,7 +3,7 @@
 import AppShell from "@/components/AppShell";
 import { useEffect, useState } from "react";
 
-type Pour = { sequence: number; waterG: number };
+type Pour = { sequence: number; tempF: number };
 type AidenProfile = {
   id: string; name: string; coffeeG: number; waterG: number; tempF: number;
   bloomTimeS: number; bloomWaterG: number; pours: Pour[]; notes?: string | null;
@@ -18,11 +18,7 @@ function AidenSettingsCard({ p, onEdit }: { p: AidenProfile; onEdit: (p: AidenPr
     <div className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
       <div className="px-4 pt-4 pb-3 border-b border-stone-800 flex items-center justify-between">
         <p className="font-semibold text-stone-100">{p.name}</p>
-        <button
-          onClick={() => onEdit(p)}
-          className="p-1.5 text-stone-500 hover:text-stone-300 transition-colors"
-          aria-label="Edit Aiden profile"
-        >
+        <button onClick={() => onEdit(p)} className="p-1.5 text-stone-500 hover:text-stone-300 transition-colors" aria-label="Edit Aiden profile">
           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -41,7 +37,7 @@ function AidenSettingsCard({ p, onEdit }: { p: AidenProfile; onEdit: (p: AidenPr
           <p className="text-stone-600 text-xs">{pours.length} pulses</p>
         </div>
         <div className="p-3 text-center">
-          <p className="text-stone-500 text-xs mb-1">Temp</p>
+          <p className="text-stone-500 text-xs mb-1">Bloom temp</p>
           <p className="text-amber-400 font-bold text-lg">{p.tempF}°</p>
           <p className="text-stone-600 text-xs">Fahrenheit</p>
         </div>
@@ -49,35 +45,20 @@ function AidenSettingsCard({ p, onEdit }: { p: AidenProfile; onEdit: (p: AidenPr
       <div className="p-4">
         <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-3">Brew Sequence</p>
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-16 shrink-0">
+          <div className="flex items-center justify-between">
+            <div>
               <span className="text-xs text-stone-500 font-medium">Bloom</span>
-              <span className="text-xs text-stone-600 block">{bloomRatio}× coffee</span>
+              <span className="text-xs text-stone-600 ml-1">{bloomRatio}× coffee · {p.bloomWaterG}g</span>
             </div>
-            <div className="flex-1 bg-stone-800 rounded-full h-5 overflow-hidden">
-              <div className="h-full bg-teal-700 rounded-full flex items-center justify-end pr-2"
-                style={{ width: `${Math.min(100, (p.bloomWaterG / p.waterG) * 100)}%` }}>
-                <span className="text-white text-xs font-medium">{p.bloomWaterG}g</span>
-              </div>
-            </div>
-            <div className="w-12 shrink-0 text-right">
-              <span className="text-stone-400 text-xs">{p.bloomTimeS}s</span>
+            <div className="text-right">
+              <span className="text-amber-400 text-sm font-semibold">{p.tempF}°F</span>
+              <span className="text-stone-500 text-xs ml-2">{p.bloomTimeS}s</span>
             </div>
           </div>
           {pours.map((pour) => (
-            <div key={pour.sequence} className="flex items-center gap-3">
-              <div className="w-16 shrink-0">
-                <span className="text-xs text-stone-500 font-medium">Pulse {pour.sequence}</span>
-              </div>
-              <div className="flex-1 bg-stone-800 rounded-full h-5 overflow-hidden">
-                <div className="h-full bg-amber-700 rounded-full flex items-center justify-end pr-2"
-                  style={{ width: `${Math.min(100, (pour.waterG / p.waterG) * 100)}%` }}>
-                  <span className="text-white text-xs font-medium">{pour.waterG}g</span>
-                </div>
-              </div>
-              <div className="w-12 shrink-0 text-right">
-                <span className="text-stone-600 text-xs">—</span>
-              </div>
+            <div key={pour.sequence} className="flex items-center justify-between">
+              <span className="text-xs text-stone-500 font-medium">Pulse {pour.sequence}</span>
+              <span className="text-amber-400 text-sm font-semibold">{pour.tempF}°F</span>
             </div>
           ))}
         </div>
@@ -98,12 +79,11 @@ export default function AidenProfilesPage() {
 
   const [name, setName] = useState("");
   const [coffeeG, setCoffeeG] = useState("18");
-  const [ratio, setRatio] = useState("16");
+  const [ratio, setRatio] = useState("15");
   const [bloomRatio, setBloomRatio] = useState("2");
   const [bloomTimeS, setBloomTimeS] = useState("45");
-  const [tempF, setTempF] = useState("205");
-  const [pulsePauseS, setPulsePauseS] = useState("30");
-  const [pulses, setPulses] = useState(["", "", ""]);
+  const [bloomTempF, setBloomTempF] = useState("205");
+  const [pulseTemps, setPulseTemps] = useState(["205", "203", "200"]);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -114,24 +94,22 @@ export default function AidenProfilesPage() {
   const coffee = parseFloat(coffeeG) || 0;
   const totalWater = Math.round(coffee * (parseFloat(ratio) || 0));
   const bloomWater = Math.round(coffee * (parseFloat(bloomRatio) || 0));
-  const pulseTotal = pulses.reduce((s, p) => s + (parseFloat(p) || 0), 0);
-  const remaining = totalWater - bloomWater - pulseTotal;
 
-  function updatePulse(i: number, val: string) {
-    setPulses((prev) => prev.map((p, idx) => idx === i ? val : p));
+  function updatePulseTemp(i: number, val: string) {
+    setPulseTemps((prev) => prev.map((t, idx) => idx === i ? val : t));
   }
   function addPulse() {
-    setPulses((prev) => [...prev, prev[prev.length - 1] ?? ""]);
+    setPulseTemps((prev) => [...prev, prev[prev.length - 1] ?? "200"]);
   }
   function removePulse(i: number) {
-    if (pulses.length <= 1) return;
-    setPulses((prev) => prev.filter((_, idx) => idx !== i));
+    if (pulseTemps.length <= 1) return;
+    setPulseTemps((prev) => prev.filter((_, idx) => idx !== i));
   }
 
   function resetForm() {
-    setName(""); setCoffeeG("18"); setRatio("16"); setBloomRatio("2");
-    setBloomTimeS("45"); setTempF("205"); setPulsePauseS("30");
-    setPulses(["", "", ""]); setNotes("");
+    setName(""); setCoffeeG("18"); setRatio("15"); setBloomRatio("2");
+    setBloomTimeS("45"); setBloomTempF("205");
+    setPulseTemps(["205", "203", "200"]); setNotes("");
   }
 
   function openEdit(p: AidenProfile) {
@@ -142,28 +120,25 @@ export default function AidenProfilesPage() {
     setRatio((p.waterG / p.coffeeG).toFixed(1));
     setBloomRatio((p.bloomWaterG / p.coffeeG).toFixed(1));
     setBloomTimeS(String(p.bloomTimeS));
-    setTempF(String(p.tempF));
-    setPulsePauseS("30");
-    setPulses(pours.length > 0 ? pours.map((pour) => String(pour.waterG)) : [""]);
+    setBloomTempF(String(p.tempF));
+    setPulseTemps(pours.length > 0 ? pours.map((pour) => String(pour.tempF)) : ["205"]);
     setNotes(p.notes ?? "");
     setShowForm(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function closeForm() {
-    setShowForm(false);
-    setEditingId(null);
-    resetForm();
+    setShowForm(false); setEditingId(null); resetForm();
   }
 
   async function save() {
     setSaving(true);
-    const pours = pulses.map((p, i) => ({ sequence: i + 1, waterG: parseFloat(p) || 0 }));
+    const pours = pulseTemps.map((t, i) => ({ sequence: i + 1, tempF: parseInt(t) || 0 }));
     const payload = {
       name,
       coffeeG: coffee,
       waterG: totalWater,
-      tempF: parseInt(tempF),
+      tempF: parseInt(bloomTempF),
       bloomTimeS: parseInt(bloomTimeS),
       bloomWaterG: bloomWater,
       pours,
@@ -215,7 +190,7 @@ export default function AidenProfilesPage() {
                 <input type="number" value={coffeeG} onChange={(e) => setCoffeeG(e.target.value)} className="input-field" />
               </div>
               <div>
-                <label className="text-stone-500 text-xs mb-1 block">Ratio (1 : X)</label>
+                <label className="text-stone-500 text-xs mb-1 block">Ratio 1 : X</label>
                 <input type="number" step="0.5" value={ratio} onChange={(e) => setRatio(e.target.value)} className="input-field" />
               </div>
             </div>
@@ -226,9 +201,9 @@ export default function AidenProfilesPage() {
 
           <div>
             <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">Bloom</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
-                <label className="text-stone-500 text-xs mb-1 block">Ratio (X : 1)</label>
+                <label className="text-stone-500 text-xs mb-1 block">Ratio X : 1</label>
                 <input type="number" step="0.5" value={bloomRatio} onChange={(e) => setBloomRatio(e.target.value)} className="input-field" />
                 {bloomWater > 0 && <p className="text-stone-600 text-xs mt-0.5">{bloomWater}g</p>}
               </div>
@@ -236,41 +211,28 @@ export default function AidenProfilesPage() {
                 <label className="text-stone-500 text-xs mb-1 block">Time (s)</label>
                 <input type="number" value={bloomTimeS} onChange={(e) => setBloomTimeS(e.target.value)} className="input-field" />
               </div>
-              <div>
-                <label className="text-stone-500 text-xs mb-1 block">Temp (°F)</label>
-                <input type="number" value={tempF} onChange={(e) => setTempF(e.target.value)} className="input-field" />
-              </div>
+            </div>
+            <div>
+              <label className="text-stone-500 text-xs mb-1 block">Bloom temp (°F)</label>
+              <input type="number" value={bloomTempF} onChange={(e) => setBloomTempF(e.target.value)} className="input-field" />
             </div>
           </div>
 
           <div>
-            <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">Pulses</p>
-            <div className="mb-3">
-              <label className="text-stone-500 text-xs mb-1 block">Pause between pulses (s)</label>
-              <input type="number" value={pulsePauseS} onChange={(e) => setPulsePauseS(e.target.value)} className="input-field" />
-            </div>
+            <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">Pulse Temps</p>
             <div className="space-y-2">
-              {pulses.map((p, i) => (
+              {pulseTemps.map((t, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <label className="text-stone-500 text-xs w-14 shrink-0">Pulse {i + 1}</label>
-                  <input
-                    type="number"
-                    placeholder="g"
-                    value={p}
-                    onChange={(e) => updatePulse(i, e.target.value)}
-                    className="input-field flex-1"
-                  />
-                  {pulses.length > 1 && (
+                  <input type="number" placeholder="°F" value={t} onChange={(e) => updatePulseTemp(i, e.target.value)} className="input-field flex-1" />
+                  <span className="text-stone-500 text-xs">°F</span>
+                  {pulseTemps.length > 1 && (
                     <button onClick={() => removePulse(i)} className="text-stone-600 hover:text-red-400 text-lg leading-none px-1">×</button>
                   )}
                 </div>
               ))}
             </div>
             <button onClick={addPulse} className="mt-2 text-amber-500 text-sm hover:text-amber-400">+ Add pulse</button>
-            <p className={`text-xs mt-2 ${Math.abs(remaining) < 2 ? "text-green-500" : "text-stone-500"}`}>
-              Remaining: <span className="font-medium">{remaining}g</span>
-              {Math.abs(remaining) < 2 && " ✓"}
-            </p>
           </div>
 
           <div>

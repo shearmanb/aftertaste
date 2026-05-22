@@ -1,7 +1,7 @@
 "use client";
 
 import AppShell from "@/components/AppShell";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Bean = {
   id: string;
@@ -12,6 +12,7 @@ type Bean = {
   process?: string | null;
   tastingNotes: string[];
   imageUrl?: string | null;
+  productUrl?: string | null;
   notes?: string | null;
 };
 
@@ -27,12 +28,33 @@ const BEAN_TASTING_NOTES = [
   "bright", "clean", "complex", "juicy", "tea-like", "earthy", "smoky", "wine",
 ];
 
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 900;
+        let { width, height } = img;
+        if (width > height && width > MAX) { height = Math.round((height * MAX) / width); width = MAX; }
+        else if (height > MAX) { width = Math.round((width * MAX) / height); height = MAX; }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.75));
+      };
+      img.src = e.target!.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function BeansPage() {
   const [beans, setBeans] = useState<Bean[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // form state
   const [producerInput, setProducerInput] = useState("");
   const [useNewProducer, setUseNewProducer] = useState(false);
   const [newProducer, setNewProducer] = useState("");
@@ -42,6 +64,8 @@ export default function BeansPage() {
   const [process, setProcess] = useState("");
   const [tastingNotes, setTastingNotes] = useState<string[]>([]);
   const [imageUrl, setImageUrl] = useState("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [productUrl, setProductUrl] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -61,41 +85,48 @@ export default function BeansPage() {
   function resetForm() {
     setProducerInput(""); setUseNewProducer(false); setNewProducer("");
     setName(""); setRegion(""); setRoastLevel("medium-light"); setProcess("");
-    setTastingNotes([]); setImageUrl(""); setNotes("");
+    setTastingNotes([]); setImageUrl(""); setImagePreview(null); setProductUrl(""); setNotes("");
   }
 
   function openEdit(bean: Bean) {
     setEditingId(bean.id);
     setProducerInput(bean.producer);
-    setUseNewProducer(false);
-    setNewProducer("");
+    setUseNewProducer(false); setNewProducer("");
     setName(bean.name);
     setRegion(bean.region ?? "");
     setRoastLevel(bean.roastLevel);
     setProcess(bean.process ?? "");
     setTastingNotes(bean.tastingNotes);
     setImageUrl(bean.imageUrl ?? "");
+    setImagePreview(bean.imageUrl ?? null);
+    setProductUrl(bean.productUrl ?? "");
     setNotes(bean.notes ?? "");
     setShowForm(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function closeForm() {
-    setShowForm(false);
-    setEditingId(null);
-    resetForm();
+    setShowForm(false); setEditingId(null); resetForm();
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const compressed = await compressImage(file);
+    setImageUrl(compressed);
+    setImagePreview(compressed);
   }
 
   async function save() {
     setSaving(true);
     const payload = {
-      producer,
-      name,
+      producer, name,
       region: region || undefined,
       roastLevel,
       process: process || undefined,
       tastingNotes,
       imageUrl: imageUrl || undefined,
+      productUrl: productUrl || undefined,
       notes: notes || undefined,
     };
 
@@ -142,41 +173,23 @@ export default function BeansPage() {
           <div>
             <label className="text-stone-500 text-xs mb-1 block">Producer *</label>
             {producers.length > 0 && !useNewProducer ? (
-              <div className="space-y-2">
-                <select
-                  value={producerInput}
-                  onChange={(e) => {
-                    if (e.target.value === "__new__") {
-                      setUseNewProducer(true);
-                      setProducerInput("");
-                    } else {
-                      setProducerInput(e.target.value);
-                    }
-                  }}
-                  className="input-field"
-                >
-                  <option value="">Select producer...</option>
-                  {producers.map((p) => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                  <option value="__new__">+ Add new producer</option>
-                </select>
-              </div>
+              <select
+                value={producerInput}
+                onChange={(e) => {
+                  if (e.target.value === "__new__") { setUseNewProducer(true); setProducerInput(""); }
+                  else setProducerInput(e.target.value);
+                }}
+                className="input-field"
+              >
+                <option value="">Select producer...</option>
+                {producers.map((p) => <option key={p} value={p}>{p}</option>)}
+                <option value="__new__">+ Add new producer</option>
+              </select>
             ) : (
               <div className="flex gap-2">
-                <input
-                  placeholder="New producer name *"
-                  value={newProducer}
-                  onChange={(e) => setNewProducer(e.target.value)}
-                  className="input-field flex-1"
-                />
+                <input placeholder="New producer name *" value={newProducer} onChange={(e) => setNewProducer(e.target.value)} className="input-field flex-1" />
                 {producers.length > 0 && (
-                  <button
-                    onClick={() => { setUseNewProducer(false); setNewProducer(""); }}
-                    className="px-3 py-2 bg-stone-800 text-stone-400 rounded-lg text-xs"
-                  >
-                    Cancel
-                  </button>
+                  <button onClick={() => { setUseNewProducer(false); setNewProducer(""); }} className="px-3 py-2 bg-stone-800 text-stone-400 rounded-lg text-xs">Cancel</button>
                 )}
               </div>
             )}
@@ -212,16 +225,8 @@ export default function BeansPage() {
             <label className="text-stone-500 text-xs mb-2 block">Tasting Notes (from bag)</label>
             <div className="flex flex-wrap gap-1.5">
               {BEAN_TASTING_NOTES.map((note) => (
-                <button
-                  key={note}
-                  type="button"
-                  onClick={() => toggleNote(note)}
-                  className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
-                    tastingNotes.includes(note)
-                      ? "bg-amber-600 text-white"
-                      : "bg-stone-800 text-stone-400 hover:bg-stone-700"
-                  }`}
-                >
+                <button key={note} type="button" onClick={() => toggleNote(note)}
+                  className={`px-2.5 py-1 rounded-full text-xs transition-colors ${tastingNotes.includes(note) ? "bg-amber-600 text-white" : "bg-stone-800 text-stone-400 hover:bg-stone-700"}`}>
                   {note}
                 </button>
               ))}
@@ -229,39 +234,46 @@ export default function BeansPage() {
           </div>
 
           <div>
-            <label className="text-stone-500 text-xs mb-1 block">Label photo URL (optional)</label>
-            <input
-              placeholder="https://..."
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="input-field"
-              type="url"
-            />
+            <label className="text-stone-500 text-xs mb-1 block">Product page URL (optional)</label>
+            <input placeholder="https://roaster.com/product/..." value={productUrl} onChange={(e) => setProductUrl(e.target.value)} className="input-field" type="url" />
+          </div>
+
+          <div>
+            <label className="text-stone-500 text-xs mb-2 block">Bean photo (optional)</label>
+            <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
+            <div className="flex gap-2">
+              <button type="button" onClick={() => fileInputRef.current?.click()}
+                className="shrink-0 px-3 py-2 bg-stone-800 text-stone-300 rounded-lg text-xs hover:bg-stone-700 transition-colors">
+                📷 Take / upload
+              </button>
+              <input
+                placeholder="or paste image URL..."
+                value={imagePreview?.startsWith("data:") ? "" : imageUrl}
+                onChange={(e) => { setImageUrl(e.target.value); setImagePreview(e.target.value || null); }}
+                className="input-field flex-1 text-xs"
+                type="url"
+              />
+            </div>
+            {imagePreview && (
+              <div className="relative mt-2">
+                <img src={imagePreview} alt="Preview" className="w-full h-36 object-cover rounded-lg" />
+                <button
+                  onClick={() => { setImageUrl(""); setImagePreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                  className="absolute top-1.5 right-1.5 bg-stone-900/80 text-stone-400 hover:text-red-400 rounded-full w-6 h-6 flex items-center justify-center text-sm"
+                >×</button>
+              </div>
+            )}
           </div>
 
           <div>
             <label className="text-stone-500 text-xs mb-1 block">Notes (optional)</label>
-            <textarea
-              placeholder="Any other notes..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className="input-field resize-none"
-            />
+            <textarea placeholder="Any other notes..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="input-field resize-none" />
           </div>
 
           <div className="flex gap-2">
-            <button
-              onClick={closeForm}
-              className="flex-1 py-2 bg-stone-800 text-stone-400 rounded-lg text-sm"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={save}
-              disabled={!producer || !name || saving}
-              className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors"
-            >
+            <button onClick={closeForm} className="flex-1 py-2 bg-stone-800 text-stone-400 rounded-lg text-sm">Cancel</button>
+            <button onClick={save} disabled={!producer || !name || saving}
+              className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
               {saving ? "Saving..." : editingId ? "Update" : "Save"}
             </button>
           </div>
@@ -272,20 +284,14 @@ export default function BeansPage() {
         <div className="text-center py-16 text-stone-500">
           <p className="text-4xl mb-3">◉</p>
           <p className="font-medium">No beans yet</p>
-          <button onClick={() => setShowForm(true)} className="text-amber-500 underline text-sm mt-2">
-            Add your first bean →
-          </button>
+          <button onClick={() => setShowForm(true)} className="text-amber-500 underline text-sm mt-2">Add your first bean →</button>
         </div>
       ) : (
         <div className="space-y-3">
           {beans.map((bean) => (
             <div key={bean.id} className={`bg-stone-900 border rounded-xl overflow-hidden transition-colors ${editingId === bean.id ? "border-amber-600/60" : "border-stone-800"}`}>
               {bean.imageUrl && (
-                <img
-                  src={bean.imageUrl}
-                  alt={`${bean.producer} ${bean.name} label`}
-                  className="w-full h-40 object-cover"
-                />
+                <img src={bean.imageUrl} alt={`${bean.producer} ${bean.name}`} className="w-full h-40 object-cover" />
               )}
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2">
@@ -293,32 +299,34 @@ export default function BeansPage() {
                     <p className="font-semibold text-stone-100">{bean.producer}</p>
                     <p className="text-stone-400 text-sm">{bean.name}</p>
                   </div>
-                  <button
-                    onClick={() => openEdit(bean)}
-                    className="shrink-0 p-1.5 text-stone-500 hover:text-stone-300 transition-colors"
-                    aria-label="Edit bean"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {bean.productUrl && (
+                      <a href={bean.productUrl} target="_blank" rel="noopener noreferrer"
+                        className="p-1.5 text-stone-500 hover:text-amber-400 transition-colors" aria-label="Product page">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                          <polyline points="15 3 21 3 21 9"/>
+                          <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                      </a>
+                    )}
+                    <button onClick={() => openEdit(bean)} className="p-1.5 text-stone-500 hover:text-stone-300 transition-colors" aria-label="Edit bean">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <div className="flex gap-1.5 mt-2 flex-wrap">
                   <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 rounded-full">{bean.roastLevel}</span>
-                  {bean.region && (
-                    <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 rounded-full">{bean.region}</span>
-                  )}
-                  {bean.process && (
-                    <span className="bg-stone-800 text-amber-600/80 text-xs px-2 py-0.5 rounded-full">{bean.process}</span>
-                  )}
+                  {bean.region && <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 rounded-full">{bean.region}</span>}
+                  {bean.process && <span className="bg-stone-800 text-amber-600/80 text-xs px-2 py-0.5 rounded-full">{bean.process}</span>}
                 </div>
                 {bean.tastingNotes && bean.tastingNotes.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {bean.tastingNotes.map((note) => (
-                      <span key={note} className="bg-amber-900/30 text-amber-300 text-xs px-2 py-0.5 rounded-full">
-                        {note}
-                      </span>
+                      <span key={note} className="bg-amber-900/30 text-amber-300 text-xs px-2 py-0.5 rounded-full">{note}</span>
                     ))}
                   </div>
                 )}

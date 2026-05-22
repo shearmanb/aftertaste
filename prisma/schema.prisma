@@ -41,6 +41,13 @@ model WaterProfile {
   brews     Brew[]
 }
 
+model FilterProfile {
+  id    String  @id @default(cuid())
+  name  String
+  notes String?
+  brews Brew[]
+}
+
 model GrindProfile {
   id      String @id @default(cuid())
   name    String
@@ -64,19 +71,21 @@ model AidenProfile {
 }
 
 model Brew {
-  id             String        @id @default(cuid())
-  brewedAt       DateTime      @default(now())
-  roastedOn      DateTime?
-  openedOn       DateTime?
-  bean           Bean          @relation(fields: [beanId], references: [id])
-  beanId         String
-  waterProfile   WaterProfile? @relation(fields: [waterProfileId], references: [id])
-  waterProfileId String?
-  grindProfile   GrindProfile  @relation(fields: [grindProfileId], references: [id])
-  grindProfileId String
-  aidenProfile   AidenProfile  @relation(fields: [aidenProfileId], references: [id])
-  aidenProfileId String
-  tastingNote    TastingNote?
+  id              String         @id @default(cuid())
+  brewedAt        DateTime       @default(now())
+  roastedOn       DateTime?
+  openedOn        DateTime?
+  bean            Bean           @relation(fields: [beanId], references: [id])
+  beanId          String
+  waterProfile    WaterProfile?  @relation(fields: [waterProfileId], references: [id])
+  waterProfileId  String?
+  filterProfile   FilterProfile? @relation(fields: [filterProfileId], references: [id])
+  filterProfileId String?
+  grindProfile    GrindProfile   @relation(fields: [grindProfileId], references: [id])
+  grindProfileId  String
+  aidenProfile    AidenProfile   @relation(fields: [aidenProfileId], references: [id])
+  aidenProfileId  String
+  tastingNote     TastingNote?
 }
 
 model TastingNote {

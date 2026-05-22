@@ -109,6 +109,7 @@ export default async function DashboardPage() {
             { href: "/producers", label: "Producers", icon: "◈" },
             { href: "/beans", label: "Beans", icon: "◉" },
             { href: "/profiles/water", label: "Water", icon: "≋" },
+            { href: "/profiles/filter", label: "Filters", icon: "▽" },
             { href: "/profiles/grind", label: "Grind Profiles", icon: "⚙" },
             { href: "/profiles/aiden", label: "Aiden Profiles", icon: "⊕" },
           ].map((item) => (

@@ -19,6 +19,12 @@ const TABLES = [
     "notes"     TEXT,
     CONSTRAINT "WaterProfile_pkey" PRIMARY KEY ("id")
   `],
+  [`FilterProfile`, `
+    "id"    TEXT NOT NULL,
+    "name"  TEXT NOT NULL,
+    "notes" TEXT,
+    CONSTRAINT "FilterProfile_pkey" PRIMARY KEY ("id")
+  `],
   [`GrindProfile`, `
     "id"      TEXT NOT NULL,
     "name"    TEXT NOT NULL,
@@ -106,6 +112,12 @@ try {
     await client.query(`CREATE TABLE IF NOT EXISTS "${name}" (${cols})`);
     console.log(`✓ ${name}`);
   }
+  await client.query(`
+    ALTER TABLE "Brew"
+      ADD COLUMN IF NOT EXISTS "filterProfileId" TEXT
+        REFERENCES "FilterProfile"("id") ON DELETE SET NULL ON UPDATE CASCADE
+  `);
+  console.log("✓ Brew.filterProfileId column");
   console.log("Schema applied.");
 } finally {
   client.release();

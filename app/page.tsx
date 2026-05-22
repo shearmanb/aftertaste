@@ -124,12 +124,17 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <div className="flex justify-end mt-4 pb-2">
-        <p className="text-stone-700 text-xs tabular-nums">
-          {process.env.NEXT_PUBLIC_COMMIT_SHA}
-          {" · "}
-          {new Date(process.env.NEXT_PUBLIC_BUILD_TIME!).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-        </p>
+      <div className="fixed bottom-20 right-3 z-10">
+        <details className="group">
+          <summary className="list-none cursor-pointer text-right">
+            <span className="text-stone-700 text-[10px] hover:text-stone-500 transition-colors select-none">·</span>
+          </summary>
+          <p className="text-stone-500 text-[10px] tabular-nums text-right mt-0.5 bg-stone-950/80 rounded px-1.5 py-0.5">
+            {process.env.NEXT_PUBLIC_COMMIT_SHA}
+            {" · "}
+            {new Date(process.env.NEXT_PUBLIC_BUILD_TIME!).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+          </p>
+        </details>
       </div>
     </AppShell>
   );

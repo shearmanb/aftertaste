@@ -7,7 +7,7 @@ export async function POST() {
     take: 60,
     orderBy: { brewedAt: "desc" },
     include: {
-      bean: true,
+      bean: { include: { producer: true } },
       waterProfile: true,
       grindProfile: true,
       aidenProfile: true,
@@ -22,7 +22,7 @@ export async function POST() {
   const brewData = JSON.stringify(
     brews.map((b) => ({
       date: b.brewedAt,
-      bean: `${b.bean.producer} - ${b.bean.name} (${b.bean.region ?? "unknown"}, ${b.bean.roastLevel}${b.bean.process ? `, ${b.bean.process}` : ""})`,
+      bean: `${b.bean.producer.name} - ${b.bean.name} (${b.bean.region ?? "unknown"}, ${b.bean.roastLevel}${b.bean.process ? `, ${b.bean.process}` : ""})`,
       water: b.waterProfile ? b.waterProfile.brand + (b.waterProfile.additives ? ` · ${b.waterProfile.additives}` : "") : "unknown",
       grind: b.grindProfile.setting,
       tempF: b.aidenProfile.tempF,

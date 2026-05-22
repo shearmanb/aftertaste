@@ -5,7 +5,6 @@ export async function GET() {
   try {
     const producers = await prisma.producer.findMany({
       orderBy: { name: "asc" },
-      include: { _count: { select: { beans: true } } },
     });
     return NextResponse.json(producers);
   } catch (err) {

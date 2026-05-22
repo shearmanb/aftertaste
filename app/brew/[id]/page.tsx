@@ -76,16 +76,39 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
             <div className="grid grid-cols-2 gap-2 mb-4">
               <ScoreBar label="Fruit" value={brew.tastingNote.fruit} />
               <ScoreBar label="Chocolate" value={brew.tastingNote.chocolate} />
-              <ScoreBar label="Bitterness" value={brew.tastingNote.bitterness} />
+              <ScoreBar label="Strength" value={brew.tastingNote.bitterness} />
               <ScoreBar label="Sourness" value={brew.tastingNote.sourness} />
             </div>
-            {brew.tastingNote.flavorTags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {brew.tastingNote.flavorTags.map((t) => (
-                  <span key={t} className="bg-stone-800 text-stone-300 text-xs px-2 py-0.5 rounded-full">{t}</span>
-                ))}
-              </div>
-            )}
+            {(() => {
+              const confirmed = (brew.tastingNote as any).confirmedTags as string[] | undefined;
+              const missed = (brew.tastingNote as any).missedTags as string[] | undefined;
+              const bonus = (brew.tastingNote as any).bonusTags as string[] | undefined;
+              const legacy = brew.tastingNote.flavorTags;
+              const hasNew = (confirmed?.length ?? 0) + (missed?.length ?? 0) + (bonus?.length ?? 0) > 0;
+              return hasNew ? (
+                <div className="space-y-1.5 mb-3">
+                  {confirmed && confirmed.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {confirmed.map((t) => <span key={t} className="bg-amber-900/40 text-amber-300 text-xs px-2 py-0.5 rounded-full">✓ {t}</span>)}
+                    </div>
+                  )}
+                  {bonus && bonus.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {bonus.map((t) => <span key={t} className="bg-sky-900/40 text-sky-300 text-xs px-2 py-0.5 rounded-full">★ {t}</span>)}
+                    </div>
+                  )}
+                  {missed && missed.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {missed.map((t) => <span key={t} className="bg-stone-800 text-stone-600 text-xs px-2 py-0.5 rounded-full line-through">✗ {t}</span>)}
+                    </div>
+                  )}
+                </div>
+              ) : legacy.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {legacy.map((t) => <span key={t} className="bg-stone-800 text-stone-300 text-xs px-2 py-0.5 rounded-full">{t}</span>)}
+                </div>
+              ) : null;
+            })()}
             {brew.tastingNote.drinkingTempF && (
               <p className="text-stone-500 text-sm">Drinking temp: {brew.tastingNote.drinkingTempF}°F</p>
             )}

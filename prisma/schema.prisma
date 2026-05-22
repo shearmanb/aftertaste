@@ -88,6 +88,9 @@ model TastingNote {
   sourness        Int
   drinkingTempF   Int?
   flavorTags      String[]
+  confirmedTags   String[]
+  missedTags      String[]
+  bonusTags       String[]
   initialThoughts String?
   bestPart        String?
   worstPart       String?

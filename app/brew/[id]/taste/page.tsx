@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import TastingSlider from "@/components/TastingSlider";
 
@@ -10,16 +10,29 @@ const COMMON_TAGS = [
   "roasty", "smoky", "earthy", "floral", "bright", "clean", "complex",
 ];
 
+type BrewData = {
+  bean: { tastingNotes: string[] };
+  tastingNote?: {
+    overallScore: number; fruit: number; bitterness: number; chocolate: number; sourness: number;
+    confirmedTags: string[]; missedTags: string[]; bonusTags: string[]; flavorTags: string[];
+    initialThoughts?: string | null; bestPart?: string | null;
+    worstPart?: string | null; changesToMake?: string | null; wouldBrewAgain: boolean;
+  } | null;
+};
+
 export default function TastePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
+  const [bagNotes, setBagNotes] = useState<string[]>([]);
   const [overallScore, setOverallScore] = useState(7);
   const [fruit, setFruit] = useState(3);
   const [strength, setStrength] = useState(3);
   const [chocolate, setChocolate] = useState(2);
   const [sourness, setSourness] = useState(1);
-  const [flavorTags, setFlavorTags] = useState<string[]>([]);
+  // 0 = unrated, 1 = tasted ✓, 2 = missed ✗
+  const [bagTagStates, setBagTagStates] = useState<Record<string, 0 | 1 | 2>>({});
+  const [bonusTags, setBonusTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
   const [initialThoughts, setInitialThoughts] = useState("");
   const [bestPart, setBestPart] = useState("");
@@ -27,16 +40,65 @@ export default function TastePage() {
   const [changesToMake, setChangesToMake] = useState("");
   const [wouldBrewAgain, setWouldBrewAgain] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  function toggleTag(tag: string) {
-    setFlavorTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
+  useEffect(() => {
+    fetch(`/api/brews/${id}`).then((r) => r.json()).then((data: BrewData) => {
+      const notes = data.bean?.tastingNotes ?? [];
+      setBagNotes(notes);
+
+      if (data.tastingNote) {
+        const tn = data.tastingNote;
+        setOverallScore(tn.overallScore);
+        setFruit(tn.fruit);
+        setStrength(tn.bitterness);
+        setChocolate(tn.chocolate);
+        setSourness(tn.sourness);
+        setInitialThoughts(tn.initialThoughts ?? "");
+        setBestPart(tn.bestPart ?? "");
+        setWorstPart(tn.worstPart ?? "");
+        setChangesToMake(tn.changesToMake ?? "");
+        setWouldBrewAgain(tn.wouldBrewAgain);
+        const states: Record<string, 0 | 1 | 2> = {};
+        notes.forEach((n) => { states[n] = 0; });
+        (tn.confirmedTags ?? []).forEach((t) => { if (t in states) states[t] = 1; });
+        (tn.missedTags ?? []).forEach((t) => { if (t in states) states[t] = 2; });
+        setBagTagStates(states);
+        const existing = tn.bonusTags?.length
+          ? tn.bonusTags
+          : (tn.flavorTags ?? []).filter((t) => !notes.includes(t));
+        setBonusTags(existing);
+      } else {
+        const states: Record<string, 0 | 1 | 2> = {};
+        notes.forEach((n) => { states[n] = 0; });
+        setBagTagStates(states);
+      }
+      setLoading(false);
+    });
+  }, [id]);
+
+  function cycleBagTag(tag: string) {
+    setBagTagStates((prev) => ({ ...prev, [tag]: (((prev[tag] ?? 0) + 1) % 3) as 0 | 1 | 2 }));
+  }
+
+  function toggleBonus(tag: string) {
+    setBonusTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
   }
 
   function addCustomTag() {
     const t = customTag.trim().toLowerCase();
-    if (t && !flavorTags.includes(t)) setFlavorTags((prev) => [...prev, t]);
+    if (!t) return;
+    if (bagNotes.includes(t)) {
+      setBagTagStates((prev) => ({ ...prev, [t]: prev[t] === 1 ? 0 : 1 }));
+    } else if (!bonusTags.includes(t)) {
+      setBonusTags((prev) => [...prev, t]);
+    }
     setCustomTag("");
   }
+
+  const confirmedTags = Object.entries(bagTagStates).filter(([, s]) => s === 1).map(([t]) => t);
+  const missedTags = Object.entries(bagTagStates).filter(([, s]) => s === 2).map(([t]) => t);
+  const extraCommonTags = COMMON_TAGS.filter((t) => !bagNotes.includes(t));
 
   async function submit() {
     setSubmitting(true);
@@ -45,7 +107,8 @@ export default function TastePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         overallScore, fruit, bitterness: strength, chocolate, sourness,
-        flavorTags,
+        confirmedTags, missedTags, bonusTags,
+        flavorTags: [...confirmedTags, ...bonusTags],
         initialThoughts: initialThoughts || undefined,
         bestPart: bestPart || undefined,
         worstPart: worstPart || undefined,
@@ -55,6 +118,10 @@ export default function TastePage() {
     });
     router.push(`/brew/${id}`);
   }
+
+  if (loading) return (
+    <div className="min-h-screen bg-stone-950 flex items-center justify-center text-stone-500">Loading...</div>
+  );
 
   return (
     <div className="min-h-screen bg-stone-950 px-4 pt-6 pb-10 max-w-lg mx-auto">
@@ -91,31 +158,85 @@ export default function TastePage() {
         {/* Flavor tags */}
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-5">
           <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Flavor Tags</p>
-          <div className="flex flex-wrap gap-2 mb-3">
-            {COMMON_TAGS.map((tag) => (
-              <button key={tag} onClick={() => toggleTag(tag)}
-                className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                  flavorTags.includes(tag) ? "bg-amber-600 text-white" : "bg-stone-800 text-stone-400 hover:bg-stone-700"
-                }`}>
-                {tag}
-              </button>
-            ))}
+
+          {bagNotes.length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-stone-500 text-xs font-medium">From the bag</p>
+                <p className="text-stone-700 text-xs">tap once = got it · tap twice = missed</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {bagNotes.map((tag) => {
+                  const state = bagTagStates[tag] ?? 0;
+                  return (
+                    <button key={tag} onClick={() => cycleBagTag(tag)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-all select-none ${
+                        state === 1
+                          ? "bg-amber-600 text-white"
+                          : state === 2
+                          ? "bg-stone-800 text-stone-600 line-through"
+                          : "bg-stone-800 border border-amber-800/50 text-amber-500/70 hover:border-amber-700"
+                      }`}>
+                      {state === 1 ? "✓ " : state === 2 ? "✗ " : ""}{tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="mb-3">
+            <p className="text-stone-500 text-xs font-medium mb-2">
+              {bagNotes.length > 0 ? "Bonus finds — not on bag" : "Flavor notes"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {extraCommonTags.map((tag) => (
+                <button key={tag} onClick={() => toggleBonus(tag)}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    bonusTags.includes(tag)
+                      ? "bg-sky-800 text-sky-200"
+                      : "bg-stone-800 text-stone-400 hover:bg-stone-700"
+                  }`}>
+                  {bonusTags.includes(tag) ? "★ " : ""}{tag}
+                </button>
+              ))}
+            </div>
           </div>
+
           <div className="flex gap-2">
-            <input type="text" placeholder="Add custom tag..." value={customTag}
+            <input type="text" placeholder="Add custom note..." value={customTag}
               onChange={(e) => setCustomTag(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addCustomTag()}
               className="flex-1 bg-stone-800 border border-stone-700 rounded-lg px-3 py-1.5 text-sm text-stone-100 focus:outline-none focus:border-amber-500" />
             <button onClick={addCustomTag} className="px-3 py-1.5 bg-stone-700 hover:bg-stone-600 rounded-lg text-sm text-stone-300 transition-colors">Add</button>
           </div>
-          {flavorTags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {flavorTags.map((tag) => (
-                <span key={tag} className="flex items-center gap-1 bg-amber-900/50 text-amber-300 text-xs px-2 py-0.5 rounded-full">
-                  {tag}
-                  <button onClick={() => toggleTag(tag)} className="text-amber-500 hover:text-amber-200 leading-none">×</button>
-                </span>
-              ))}
+
+          {(confirmedTags.length > 0 || bonusTags.length > 0 || missedTags.length > 0) && (
+            <div className="mt-3 pt-3 border-t border-stone-800 space-y-1.5">
+              {confirmedTags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {confirmedTags.map((t) => (
+                    <span key={t} className="bg-amber-900/40 text-amber-300 text-xs px-2 py-0.5 rounded-full">✓ {t}</span>
+                  ))}
+                </div>
+              )}
+              {bonusTags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {bonusTags.filter((t) => !extraCommonTags.includes(t)).map((t) => (
+                    <span key={t} className="flex items-center gap-1 bg-sky-900/40 text-sky-300 text-xs px-2 py-0.5 rounded-full">
+                      ★ {t}
+                      <button onClick={() => toggleBonus(t)} className="leading-none hover:text-white">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {missedTags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {missedTags.map((t) => (
+                    <span key={t} className="bg-stone-800 text-stone-600 text-xs px-2 py-0.5 rounded-full line-through">✗ {t}</span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

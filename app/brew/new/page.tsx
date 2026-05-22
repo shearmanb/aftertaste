@@ -7,10 +7,11 @@ import { format } from "date-fns";
 
 type Pour = { sequence: number; waterG: number; pauseS: number };
 type WaterProfile = { id: string; brand: string; additives?: string | null };
+type FilterProfile = { id: string; name: string };
 type Bean = { id: string; producer: { name: string }; name: string; roastLevel: string; region?: string | null; process?: string | null };
 type GrindProfile = { id: string; name: string; setting: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number; bloomTimeS: number; bloomWaterG: number; pours: Pour[] };
-type SourceBrew = { brewedAt: string; roastedOn?: string | null; openedOn?: string | null; bean: Bean; waterProfile?: WaterProfile | null; grindProfile: GrindProfile; aidenProfile: AidenProfile };
+type SourceBrew = { brewedAt: string; roastedOn?: string | null; openedOn?: string | null; bean: Bean; waterProfile?: WaterProfile | null; filterProfile?: FilterProfile | null; grindProfile: GrindProfile; aidenProfile: AidenProfile };
 
 function NewBrewPageContent() {
   const router = useRouter();
@@ -19,11 +20,13 @@ function NewBrewPageContent() {
 
   const [step, setStep] = useState(1);
   const [waterProfiles, setWaterProfiles] = useState<WaterProfile[]>([]);
+  const [filterProfiles, setFilterProfiles] = useState<FilterProfile[]>([]);
   const [beans, setBeans] = useState<Bean[]>([]);
   const [grindProfiles, setGrindProfiles] = useState<GrindProfile[]>([]);
   const [aidenProfiles, setAidenProfiles] = useState<AidenProfile[]>([]);
 
   const [selectedWater, setSelectedWater] = useState<WaterProfile | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<FilterProfile | null>(null);
   const [selectedBean, setSelectedBean] = useState<Bean | null>(null);
   const [selectedGrind, setSelectedGrind] = useState<GrindProfile | null>(null);
   const [selectedAiden, setSelectedAiden] = useState<AidenProfile | null>(null);
@@ -35,6 +38,7 @@ function NewBrewPageContent() {
   useEffect(() => {
     const fetches = [
       fetch("/api/profiles/water").then((r) => r.json()),
+      fetch("/api/profiles/filter").then((r) => r.json()),
       fetch("/api/beans").then((r) => r.json()),
       fetch("/api/profiles/grind").then((r) => r.json()),
       fetch("/api/profiles/aiden").then((r) => r.json()),
@@ -43,14 +47,16 @@ function NewBrewPageContent() {
       ? fetch(`/api/brews/${fromId}`).then((r) => r.json())
       : Promise.resolve(null);
 
-    Promise.all([...fetches, sourcePromise]).then(([water, beansData, grind, aiden, source]) => {
+    Promise.all([...fetches, sourcePromise]).then(([water, filter, beansData, grind, aiden, source]) => {
       setWaterProfiles(Array.isArray(water) ? water : []);
+      setFilterProfiles(Array.isArray(filter) ? filter : []);
       setBeans(Array.isArray(beansData) ? beansData : []);
       setGrindProfiles(Array.isArray(grind) ? grind : []);
       setAidenProfiles(Array.isArray(aiden) ? aiden : []);
       if (source) {
         setSourceBrew(source);
         if (source.waterProfile) setSelectedWater(source.waterProfile);
+        if (source.filterProfile) setSelectedFilter(source.filterProfile);
         setSelectedBean(source.bean);
         setSelectedGrind(source.grindProfile);
         setSelectedAiden(source.aidenProfile);
@@ -79,6 +85,7 @@ function NewBrewPageContent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         waterProfileId: selectedWater?.id,
+        filterProfileId: selectedFilter?.id,
         beanId: selectedBean!.id,
         grindProfileId: selectedGrind!.id,
         aidenProfileId: selectedAiden!.id,
@@ -90,7 +97,7 @@ function NewBrewPageContent() {
     router.push(`/brew/${brew.id}/taste`);
   }
 
-  const totalSteps = 4;
+  const totalSteps = 5;
 
   return (
     <div className="min-h-screen bg-stone-950 px-4 pt-6 pb-10 max-w-lg mx-auto">
@@ -159,6 +166,47 @@ function NewBrewPageContent() {
 
       {step === 2 && (
         <div>
+          <p className="text-stone-400 text-sm mb-4 font-medium">Select filter <span className="text-stone-600 font-normal">(optional)</span></p>
+          {filterProfiles.length === 0 ? (
+            <div className="text-center py-10 text-stone-500">
+              <p className="text-3xl mb-2">▽</p>
+              <p>No filters yet.</p>
+              <a href="/profiles/filter" className="text-amber-500 underline text-sm mt-1 block">Add filters →</a>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filterProfiles.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => { setSelectedFilter(f); setStep(3); }}
+                  className={`w-full text-left rounded-xl p-4 border transition-colors ${
+                    selectedFilter?.id === f.id
+                      ? "border-amber-500 bg-stone-900"
+                      : "bg-stone-900 border-stone-800 hover:border-amber-600"
+                  }`}
+                >
+                  <p className="font-semibold text-stone-100">{f.name}</p>
+                  {selectedFilter?.id === f.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            onClick={() => { setSelectedFilter(null); setStep(3); }}
+            className="w-full mt-4 py-3 bg-stone-800 hover:bg-stone-700 text-stone-400 font-medium rounded-xl transition-colors"
+          >
+            Skip (no filter)
+          </button>
+          {selectedFilter && (
+            <button onClick={() => setStep(3)} className="w-full mt-2 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">
+              Next →
+            </button>
+          )}
+        </div>
+      )}
+
+      {step === 3 && (
+        <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select beans</p>
           {beans.length === 0 ? (
             <div className="text-center py-10 text-stone-500">
@@ -170,7 +218,7 @@ function NewBrewPageContent() {
               {beans.map((bean) => (
                 <button
                   key={bean.id}
-                  onClick={() => { setSelectedBean(bean); setStep(3); }}
+                  onClick={() => { setSelectedBean(bean); setStep(4); }}
                   className={`w-full text-left rounded-xl p-4 border transition-colors ${
                     selectedBean?.id === bean.id
                       ? "border-amber-500 bg-stone-900"
@@ -189,14 +237,14 @@ function NewBrewPageContent() {
             </div>
           )}
           {selectedBean && (
-            <button onClick={() => setStep(3)} className="w-full mt-4 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">
+            <button onClick={() => setStep(4)} className="w-full mt-4 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">
               Next →
             </button>
           )}
         </div>
       )}
 
-      {step === 3 && (
+      {step === 4 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select grind profile</p>
           <div className="space-y-2 mb-4">
@@ -227,7 +275,7 @@ function NewBrewPageContent() {
 
           <button
             disabled={!selectedGrind}
-            onClick={() => setStep(4)}
+            onClick={() => setStep(5)}
             className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors"
           >
             Next →
@@ -235,7 +283,7 @@ function NewBrewPageContent() {
         </div>
       )}
 
-      {step === 4 && (
+      {step === 5 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select Aiden profile</p>
           <div className="space-y-2 mb-4">
@@ -308,6 +356,7 @@ function NewBrewPageContent() {
           <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-1 text-sm">
             <p className="text-stone-400 font-medium mb-2">Brew summary</p>
             {selectedWater && <p className="text-stone-300"><span className="text-stone-500">Water:</span> {selectedWater.brand}{selectedWater.additives ? ` · ${selectedWater.additives}` : ""}</p>}
+            {selectedFilter && <p className="text-stone-300"><span className="text-stone-500">Filter:</span> {selectedFilter.name}</p>}
             <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer.name} — {selectedBean?.name}</p>
             <p className="text-stone-300"><span className="text-stone-500">Grind:</span> {selectedGrind?.setting} (Ode Gen 2)</p>
             {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}

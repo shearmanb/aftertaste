@@ -9,6 +9,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       include: {
         bean: { include: { producer: true } },
         waterProfile: true,
+        filterProfile: true,
         grindProfile: true,
         aidenProfile: true,
         tastingNote: true,
@@ -25,12 +26,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const { beanId, waterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn } = await req.json();
+    const { beanId, waterProfileId, filterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn } = await req.json();
     const brew = await prisma.brew.update({
       where: { id },
       data: {
         beanId,
         waterProfileId: waterProfileId || null,
+        filterProfileId: filterProfileId || null,
         grindProfileId,
         aidenProfileId,
         roastedOn: roastedOn ? new Date(roastedOn) : null,
@@ -39,6 +41,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       include: {
         bean: { include: { producer: true } },
         waterProfile: true,
+        filterProfile: true,
         grindProfile: true,
         aidenProfile: true,
       },

@@ -12,7 +12,7 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const brew = await prisma.brew.findUnique({
     where: { id },
-    include: { bean: { include: { producer: true } }, waterProfile: true, grindProfile: true, aidenProfile: true, tastingNote: true },
+    include: { bean: { include: { producer: true } }, waterProfile: true, filterProfile: true, grindProfile: true, aidenProfile: true, tastingNote: true },
   });
   if (!brew) notFound();
 
@@ -53,6 +53,7 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
                 <Link href={`/brew/${id}/edit`} className="text-amber-500 text-xs hover:text-amber-400">Set water profile →</Link>
               </div>
           }
+          {brew.filterProfile && <Row label="Filter" value={brew.filterProfile.name} />}
           <Row label="Grind" value={`${grind} (Ode Gen 2)`} />
           <Row label="Profile" value={brew.aidenProfile.name} />
           <Row label="Ratio" value={`${ratio}:1 (${brew.aidenProfile.coffeeG}g / ${brew.aidenProfile.waterG}g)`} />

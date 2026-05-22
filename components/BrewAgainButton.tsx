@@ -17,6 +17,7 @@ export default function BrewAgainButton({ brewId }: { brewId: string }) {
       body: JSON.stringify({
         beanId: original.beanId,
         waterProfileId: original.waterProfileId,
+        filterProfileId: original.filterProfileId,
         grindProfileId: original.grindProfileId,
         aidenProfileId: original.aidenProfileId,
       }),

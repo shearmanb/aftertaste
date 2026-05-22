@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 
 type WaterProfile = { id: string; brand: string; additives?: string | null };
+type FilterProfile = { id: string; name: string };
 type Bean = { id: string; producer: { name: string }; name: string; roastLevel: string; region?: string | null };
 type GrindProfile = { id: string; name: string; setting: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number };
@@ -13,11 +14,13 @@ export default function EditBrewPage() {
   const router = useRouter();
 
   const [waterProfiles, setWaterProfiles] = useState<WaterProfile[]>([]);
+  const [filterProfiles, setFilterProfiles] = useState<FilterProfile[]>([]);
   const [beans, setBeans] = useState<Bean[]>([]);
   const [grindProfiles, setGrindProfiles] = useState<GrindProfile[]>([]);
   const [aidenProfiles, setAidenProfiles] = useState<AidenProfile[]>([]);
 
   const [waterProfileId, setWaterProfileId] = useState<string>("");
+  const [filterProfileId, setFilterProfileId] = useState<string>("");
   const [beanId, setBeanId] = useState<string>("");
   const [grindProfileId, setGrindProfileId] = useState<string>("");
   const [aidenProfileId, setAidenProfileId] = useState<string>("");
@@ -30,20 +33,23 @@ export default function EditBrewPage() {
     Promise.all([
       fetch(`/api/brews/${id}`).then((r) => r.json()),
       fetch("/api/profiles/water").then((r) => r.json()),
+      fetch("/api/profiles/filter").then((r) => r.json()),
       fetch("/api/beans").then((r) => r.json()),
       fetch("/api/profiles/grind").then((r) => r.json()),
       fetch("/api/profiles/aiden").then((r) => r.json()),
-    ]).then(([brew, water, beansData, grind, aiden]) => {
+    ]).then(([brew, water, filter, beansData, grind, aiden]) => {
       setWaterProfileId(brew.waterProfileId ?? "");
+      setFilterProfileId(brew.filterProfileId ?? "");
       setBeanId(brew.beanId);
       setGrindProfileId(brew.grindProfileId);
       setAidenProfileId(brew.aidenProfileId);
       if (brew.roastedOn) setRoastedOn(brew.roastedOn.split("T")[0]);
       if (brew.openedOn) setOpenedOn(brew.openedOn.split("T")[0]);
-      setWaterProfiles(water);
-      setBeans(beansData);
-      setGrindProfiles(grind);
-      setAidenProfiles(aiden);
+      setWaterProfiles(Array.isArray(water) ? water : []);
+      setFilterProfiles(Array.isArray(filter) ? filter : []);
+      setBeans(Array.isArray(beansData) ? beansData : []);
+      setGrindProfiles(Array.isArray(grind) ? grind : []);
+      setAidenProfiles(Array.isArray(aiden) ? aiden : []);
       setLoading(false);
     });
   }, [id]);
@@ -56,6 +62,7 @@ export default function EditBrewPage() {
       body: JSON.stringify({
         beanId,
         waterProfileId: waterProfileId || undefined,
+        filterProfileId: filterProfileId || undefined,
         grindProfileId,
         aidenProfileId,
         roastedOn: roastedOn || null,
@@ -90,6 +97,23 @@ export default function EditBrewPage() {
             ))}
           </div>
         </div>
+
+        {/* Filter */}
+        {filterProfiles.length > 0 && (
+          <div>
+            <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">
+              Filter <span className="text-stone-600 normal-case font-normal">(optional)</span>
+            </label>
+            <div className="space-y-2">
+              {filterProfiles.map((f) => (
+                <button key={f.id} onClick={() => setFilterProfileId(filterProfileId === f.id ? "" : f.id)}
+                  className={`w-full text-left rounded-xl p-3 border transition-colors ${filterProfileId === f.id ? "border-amber-500 bg-stone-900" : "border-stone-800 bg-stone-900 hover:border-stone-600"}`}>
+                  <p className="text-stone-100 text-sm font-medium">{f.name}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Beans */}
         <div>

@@ -29,12 +29,13 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { beanId, waterProfileId, filterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn } = await req.json();
+    const { beanId, waterProfileId, filterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn, brewIssues } = await req.json();
     const brew = await prisma.brew.create({
       data: {
         beanId, waterProfileId, filterProfileId, grindProfileId, aidenProfileId,
         roastedOn: roastedOn ? new Date(roastedOn) : undefined,
         openedOn: openedOn ? new Date(openedOn) : undefined,
+        brewIssues: brewIssues ?? [],
       },
       include: {
         bean: { include: { producer: true } },

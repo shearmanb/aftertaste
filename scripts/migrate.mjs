@@ -136,6 +136,12 @@ const SEED = [
   ["beanTastingNote", "clean"], ["beanTastingNote", "complex"], ["beanTastingNote", "juicy"],
   ["beanTastingNote", "tea-like"], ["beanTastingNote", "earthy"], ["beanTastingNote", "smoky"],
   ["beanTastingNote", "wine"],
+  // brewIssue
+  ["brewIssue", "channeling"], ["brewIssue", "uneven extraction"], ["brewIssue", "under-extracted"],
+  ["brewIssue", "over-extracted"], ["brewIssue", "grind too coarse"], ["brewIssue", "grind too fine"],
+  ["brewIssue", "water too hot"], ["brewIssue", "water too cold"], ["brewIssue", "bloom too short"],
+  ["brewIssue", "bloom too long"], ["brewIssue", "wrong dose"], ["brewIssue", "scale error"],
+  ["brewIssue", "stale beans"], ["brewIssue", "clogged filter"], ["brewIssue", "equipment issue"],
   // flavorTag
   ["flavorTag", "jasmine"], ["flavorTag", "berry"], ["flavorTag", "citrus"],
   ["flavorTag", "tropical"], ["flavorTag", "stone fruit"], ["flavorTag", "apple"],
@@ -162,6 +168,7 @@ try {
   `);
   await client.query(`ALTER TABLE "Brew" ADD COLUMN IF NOT EXISTS "roastedOn" TIMESTAMP(3)`);
   await client.query(`ALTER TABLE "Brew" ADD COLUMN IF NOT EXISTS "openedOn" TIMESTAMP(3)`);
+  await client.query(`ALTER TABLE "Brew" ADD COLUMN IF NOT EXISTS "brewIssues" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]`);
   console.log("✓ Brew columns");
 
   await client.query(`ALTER TABLE "Bean" ADD COLUMN IF NOT EXISTS "productUrl" TEXT`);

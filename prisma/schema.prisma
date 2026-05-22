@@ -93,6 +93,7 @@ model Brew {
   grindProfileId  String
   aidenProfile    AidenProfile   @relation(fields: [aidenProfileId], references: [id])
   aidenProfileId  String
+  brewIssues      String[]
   tastingNote     TastingNote?
 }
 

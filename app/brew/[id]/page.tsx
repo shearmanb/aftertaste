@@ -69,6 +69,16 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
             const days = Math.round((new Date(brew.brewedAt).getTime() - new Date(brew.roastedOn!).getTime()) / 86400000);
             return <Row label="Days from roast" value={`${days} days`} />;
           })()}
+          {(brew as any).brewIssues?.length > 0 && (
+            <div className="pt-1">
+              <p className="text-stone-500 text-xs mb-1.5">Issues</p>
+              <div className="flex flex-wrap gap-1">
+                {((brew as any).brewIssues as string[]).map((issue) => (
+                  <span key={issue} className="bg-red-900/40 text-red-300 text-xs px-2 py-0.5 rounded-full border border-red-800/40">{issue}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {brew.tastingNote ? (

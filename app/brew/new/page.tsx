@@ -120,7 +120,7 @@ function NewBrewPageContent() {
 
       {sourceBrew && (
         <div className="bg-amber-950/40 border border-amber-800/40 rounded-xl px-4 py-2.5 mb-5 flex items-center gap-2">
-          <span className="text-amber-500 text-sm">③</span>
+          <span className="text-amber-500 text-sm">④</span>
           <p className="text-amber-300/80 text-xs">
             Branching from <span className="font-medium text-amber-300">{sourceBrew.bean.producer.name} — {sourceBrew.bean.name}</span>
             <span className="text-amber-500/60"> · {format(new Date(sourceBrew.brewedAt), "MMM d, yyyy")}</span>
@@ -128,6 +128,7 @@ function NewBrewPageContent() {
         </div>
       )}
 
+      {/* Step 1: Water */}
       {step === 1 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select water</p>
@@ -164,6 +165,7 @@ function NewBrewPageContent() {
         </div>
       )}
 
+      {/* Step 2: Filter */}
       {step === 2 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select filter <span className="text-stone-600 font-normal">(optional)</span></p>
@@ -205,6 +207,7 @@ function NewBrewPageContent() {
         </div>
       )}
 
+      {/* Step 3: Beans */}
       {step === 3 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select beans</p>
@@ -225,7 +228,7 @@ function NewBrewPageContent() {
                       : "bg-stone-900 border-stone-800 hover:border-amber-600"
                   }`}
                 >
-                  <p className="font-semibold text-stone-100">{bean.producer.name}</p>
+                  <p className="font-semibold text-stone-100">{bean.producer?.name}</p>
                   <p className="text-stone-400 text-sm">
                     {bean.name} · {bean.roastLevel}
                     {bean.region ? ` · ${bean.region}` : ""}
@@ -244,6 +247,7 @@ function NewBrewPageContent() {
         </div>
       )}
 
+      {/* Step 4: Grind */}
       {step === 4 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select grind profile</p>
@@ -283,6 +287,7 @@ function NewBrewPageContent() {
         </div>
       )}
 
+      {/* Step 5: Aiden */}
       {step === 5 && (
         <div>
           <p className="text-stone-400 text-sm mb-4 font-medium">Select Aiden profile</p>
@@ -357,7 +362,7 @@ function NewBrewPageContent() {
             <p className="text-stone-400 font-medium mb-2">Brew summary</p>
             {selectedWater && <p className="text-stone-300"><span className="text-stone-500">Water:</span> {selectedWater.brand}{selectedWater.additives ? ` · ${selectedWater.additives}` : ""}</p>}
             {selectedFilter && <p className="text-stone-300"><span className="text-stone-500">Filter:</span> {selectedFilter.name}</p>}
-            <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer.name} — {selectedBean?.name}</p>
+            <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer?.name} — {selectedBean?.name}</p>
             <p className="text-stone-300"><span className="text-stone-500">Grind:</span> {selectedGrind?.setting} (Ode Gen 2)</p>
             {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}
           </div>

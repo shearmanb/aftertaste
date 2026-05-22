@@ -4,10 +4,10 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const beans = await prisma.bean.findMany({
-      orderBy: { producer: { name: "asc" } },
+      orderBy: { createdAt: "asc" },
       include: { producer: true },
     });
-    return NextResponse.json(beans);
+    return NextResponse.json(beans.filter((b) => b.producer !== null));
   } catch (err) {
     console.error("GET /api/beans:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

@@ -7,9 +7,10 @@ interface Props {
   onChange: (v: number) => void;
   lowLabel?: string;
   highLabel?: string;
+  midLabel?: string;
 }
 
-export default function TastingSlider({ label, value, max = 5, onChange, lowLabel, highLabel }: Props) {
+export default function TastingSlider({ label, value, max = 5, onChange, lowLabel, highLabel, midLabel }: Props) {
   return (
     <div className="space-y-1">
       <div className="flex justify-between items-baseline">
@@ -24,9 +25,10 @@ export default function TastingSlider({ label, value, max = 5, onChange, lowLabe
         onChange={(e) => onChange(parseInt(e.target.value))}
         className="w-full accent-amber-500 h-2"
       />
-      {(lowLabel || highLabel) && (
+      {(lowLabel || highLabel || midLabel) && (
         <div className="flex justify-between text-xs text-stone-600">
           <span>{lowLabel}</span>
+          {midLabel && <span>{midLabel}</span>}
           <span>{highLabel}</span>
         </div>
       )}

@@ -16,7 +16,7 @@ export default function TastePage() {
 
   const [overallScore, setOverallScore] = useState(7);
   const [fruit, setFruit] = useState(3);
-  const [bitterness, setBitterness] = useState(2);
+  const [strength, setStrength] = useState(3);
   const [chocolate, setChocolate] = useState(2);
   const [sourness, setSourness] = useState(1);
   const [flavorTags, setFlavorTags] = useState<string[]>([]);
@@ -44,7 +44,7 @@ export default function TastePage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        overallScore, fruit, bitterness, chocolate, sourness,
+        overallScore, fruit, bitterness: strength, chocolate, sourness,
         flavorTags,
         initialThoughts: initialThoughts || undefined,
         bestPart: bestPart || undefined,
@@ -79,12 +79,12 @@ export default function TastePage() {
           </div>
         </div>
 
-        {/* Flavor dimensions — scale: 1 = lots, 5 = none */}
+        {/* Flavor dimensions */}
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-5 space-y-5">
           <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">Flavor Dimensions</p>
           <TastingSlider label="Fruit" value={fruit} onChange={setFruit} lowLabel="Tons" highLabel="None" />
-          <TastingSlider label="Chocolate / Sweetness" value={chocolate} onChange={setChocolate} lowLabel="Rich" highLabel="None" />
-          <TastingSlider label="Bitterness" value={bitterness} onChange={setBitterness} lowLabel="Harsh" highLabel="None" />
+          <TastingSlider label="Chocolate / Roastness" value={chocolate} onChange={setChocolate} lowLabel="Rich" highLabel="None" />
+          <TastingSlider label="Strength" value={strength} onChange={setStrength} lowLabel="Too weak" midLabel="perfect" highLabel="Too strong" />
           <TastingSlider label="Sourness / Off-flavors" value={sourness} onChange={setSourness} lowLabel="Sharp" highLabel="None" />
         </div>
 

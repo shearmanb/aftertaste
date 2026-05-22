@@ -73,12 +73,12 @@ export default function BeansPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/beans").then((r) => r.json()),
-      fetch("/api/producers").then((r) => r.json()),
+      fetch("/api/beans").then((r) => r.ok ? r.json() : []),
+      fetch("/api/producers").then((r) => r.ok ? r.json() : []),
     ]).then(([beansData, producersData]) => {
       setBeans(beansData);
       setProducers(producersData);
-    });
+    }).catch(() => {});
   }, []);
 
   function toggleNote(note: string) {

@@ -24,7 +24,7 @@ export default function BrewsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/brews").then((r) => r.json()).then((data) => { setBrews(data); setLoading(false); });
+    fetch("/api/brews").then((r) => r.ok ? r.json() : []).then((data) => { setBrews(data); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
   async function deleteBrew(id: string) {
@@ -60,16 +60,13 @@ export default function BrewsPage() {
             <div key={brew.id} className="bg-stone-900 border border-stone-800 rounded-xl p-4">
               <div className="flex items-start justify-between gap-3">
                 <Link href={`/brew/${brew.id}`} className="flex-1 min-w-0">
-                  {/* Bean */}
                   <p className="font-semibold text-stone-100 truncate">
                     {brew.bean.producer.name} — {brew.bean.name}
                   </p>
-                  {/* Date */}
                   <p className="text-stone-500 text-xs mt-0.5">
                     {format(new Date(brew.brewedAt), "MMM d, yyyy · h:mm a")}
                     <span className="text-stone-600"> · {formatDistanceToNow(new Date(brew.brewedAt), { addSuffix: true })}</span>
                   </p>
-                  {/* Profiles */}
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     <span className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 rounded-full">
                       Grind: {brew.grindProfile.name} ({brew.grindProfile.setting})
@@ -78,7 +75,6 @@ export default function BrewsPage() {
                       {brew.aidenProfile.name}
                     </span>
                   </div>
-                  {/* Flavor tags */}
                   {brew.tastingNote?.flavorTags && brew.tastingNote.flavorTags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {brew.tastingNote.flavorTags.slice(0, 3).map((tag) => (
@@ -89,7 +85,6 @@ export default function BrewsPage() {
                 </Link>
 
                 <div className="flex flex-col items-end gap-2 shrink-0">
-                  {/* Score */}
                   {brew.tastingNote ? (
                     <div className="text-right">
                       <span className="text-amber-400 font-bold text-xl">{brew.tastingNote.overallScore}</span>
@@ -103,7 +98,6 @@ export default function BrewsPage() {
                       Rate →
                     </Link>
                   )}
-                  {/* Actions */}
                   <div className="flex gap-2">
                     <Link href={`/brew/${brew.id}/edit`} className="text-stone-600 hover:text-stone-400 text-xs">Edit</Link>
                     <button

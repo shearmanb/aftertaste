@@ -3,17 +3,13 @@ import { prisma } from "@/lib/prisma";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { producerId, producer: _producer, ...rest } = await req.json();
-  const bean = await prisma.bean.update({
-    where: { id },
-    data: { ...rest, ...(producerId ? { producerId } : {}) },
-    include: { producer: true },
-  });
-  return NextResponse.json(bean);
+  const body = await req.json();
+  const producer = await prisma.producer.update({ where: { id }, data: body });
+  return NextResponse.json(producer);
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await prisma.bean.delete({ where: { id } });
+  await prisma.producer.delete({ where: { id } });
   return new NextResponse(null, { status: 204 });
 }

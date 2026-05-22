@@ -8,7 +8,7 @@ import { format, formatDistanceToNow } from "date-fns";
 type Brew = {
   id: string;
   brewedAt: string;
-  bean: { producer: string; name: string; roastLevel: string };
+  bean: { producer: { name: string }; name: string; roastLevel: string };
   grindProfile: { name: string; setting: number };
   aidenProfile: { name: string };
   tastingNote?: {
@@ -62,7 +62,7 @@ export default function BrewsPage() {
                 <Link href={`/brew/${brew.id}`} className="flex-1 min-w-0">
                   {/* Bean */}
                   <p className="font-semibold text-stone-100 truncate">
-                    {brew.bean.producer} — {brew.bean.name}
+                    {brew.bean.producer.name} — {brew.bean.name}
                   </p>
                   {/* Date */}
                   <p className="text-stone-500 text-xs mt-0.5">

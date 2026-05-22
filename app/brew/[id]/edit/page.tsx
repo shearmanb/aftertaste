@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 
 type WaterProfile = { id: string; brand: string; additives?: string | null };
-type Bean = { id: string; producer: string; name: string; roastLevel: string; region?: string | null };
+type Bean = { id: string; producer: { name: string }; name: string; roastLevel: string; region?: string | null };
 type GrindProfile = { id: string; name: string; setting: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number };
 
@@ -92,7 +92,7 @@ export default function EditBrewPage() {
             {beans.map((b) => (
               <button key={b.id} onClick={() => setBeanId(b.id)}
                 className={`w-full text-left rounded-xl p-3 border transition-colors ${beanId === b.id ? "border-amber-500 bg-stone-900" : "border-stone-800 bg-stone-900 hover:border-stone-600"}`}>
-                <p className="text-stone-100 text-sm font-medium">{b.producer}</p>
+                <p className="text-stone-100 text-sm font-medium">{b.producer.name}</p>
                 <p className="text-stone-500 text-xs">{b.name} · {b.roastLevel}{b.region ? ` · ${b.region}` : ""}</p>
               </button>
             ))}

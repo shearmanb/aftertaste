@@ -11,7 +11,7 @@ export async function GET(req: Request) {
     skip,
     orderBy: { brewedAt: "desc" },
     include: {
-      bean: true,
+      bean: { include: { producer: true } },
       grindProfile: true,
       aidenProfile: true,
       tastingNote: true,
@@ -25,7 +25,12 @@ export async function POST(req: Request) {
   const { beanId, waterProfileId, grindProfileId, aidenProfileId } = body;
   const brew = await prisma.brew.create({
     data: { beanId, waterProfileId, grindProfileId, aidenProfileId },
-    include: { bean: true, waterProfile: true, grindProfile: true, aidenProfile: true },
+    include: {
+      bean: { include: { producer: true } },
+      waterProfile: true,
+      grindProfile: true,
+      aidenProfile: true,
+    },
   });
   return NextResponse.json(brew, { status: 201 });
 }

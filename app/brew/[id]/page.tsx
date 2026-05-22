@@ -12,7 +12,7 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const brew = await prisma.brew.findUnique({
     where: { id },
-    include: { bean: true, waterProfile: true, grindProfile: true, aidenProfile: true, tastingNote: true },
+    include: { bean: { include: { producer: true } }, waterProfile: true, grindProfile: true, aidenProfile: true, tastingNote: true },
   });
   if (!brew) notFound();
 
@@ -25,7 +25,7 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
       <div className="flex items-center gap-3 mb-6 pt-2">
         <Link href="/brews" className="text-stone-400 hover:text-stone-200 text-2xl">‹</Link>
         <div className="min-w-0 flex-1">
-          <h1 className="font-bold text-stone-100 truncate">{brew.bean.producer} — {brew.bean.name}</h1>
+          <h1 className="font-bold text-stone-100 truncate">{brew.bean.producer.name} — {brew.bean.name}</h1>
           <p className="text-stone-500 text-sm">{format(new Date(brew.brewedAt), "MMM d, yyyy · h:mm a")}</p>
         </div>
         <div className="flex gap-3 shrink-0">
@@ -37,7 +37,7 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
       <div className="space-y-4">
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-2">
           <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Bean</p>
-          <Row label="Producer" value={brew.bean.producer} />
+          <Row label="Producer" value={brew.bean.producer.name} />
           <Row label="Name" value={brew.bean.name} />
           {brew.bean.region && <Row label="Region" value={brew.bean.region} />}
           {brew.bean.process && <Row label="Process" value={brew.bean.process} />}

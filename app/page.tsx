@@ -10,7 +10,7 @@ async function getRecentBrews() {
     return await prisma.brew.findMany({
       take: 5,
       orderBy: { brewedAt: "desc" },
-      include: { bean: true, grindProfile: true, tastingNote: true },
+      include: { bean: { include: { producer: true } }, grindProfile: true, tastingNote: true },
     });
   } catch {
     return [];
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
                 <div className="flex items-start justify-between">
                   <div className="min-w-0">
                     <p className="font-semibold text-stone-100 truncate">
-                      {brew.bean.producer} — {brew.bean.name}
+                      {brew.bean.producer.name} — {brew.bean.name}
                     </p>
                     <p className="text-stone-500 text-sm mt-0.5">
                       Grind {brew.grindProfile.setting} ·{" "}
@@ -106,10 +106,11 @@ export default async function DashboardPage() {
         <h2 className="text-stone-400 text-sm font-semibold uppercase tracking-wide mb-3">Quick Access</h2>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { href: "/profiles/water", label: "Water", icon: "≋" },
+            { href: "/producers", label: "Producers", icon: "◈" },
             { href: "/beans", label: "Beans", icon: "◉" },
+            { href: "/profiles/water", label: "Water", icon: "≋" },
             { href: "/profiles/grind", label: "Grind Profiles", icon: "⚙" },
-            { href: "/profiles/aiden", label: "Aiden Profiles", icon: "◈" },
+            { href: "/profiles/aiden", label: "Aiden Profiles", icon: "⊕" },
           ].map((item) => (
             <Link
               key={item.href}

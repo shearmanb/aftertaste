@@ -5,7 +5,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const brew = await prisma.brew.findUnique({
     where: { id },
-    include: { bean: true, waterProfile: true, grindProfile: true, aidenProfile: true, tastingNote: true },
+    include: {
+      bean: { include: { producer: true } },
+      waterProfile: true,
+      grindProfile: true,
+      aidenProfile: true,
+      tastingNote: true,
+    },
   });
   if (!brew) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(brew);
@@ -17,7 +23,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const brew = await prisma.brew.update({
     where: { id },
     data: body,
-    include: { bean: true, waterProfile: true, grindProfile: true, aidenProfile: true },
+    include: {
+      bean: { include: { producer: true } },
+      waterProfile: true,
+      grindProfile: true,
+      aidenProfile: true,
+    },
   });
   return NextResponse.json(brew);
 }

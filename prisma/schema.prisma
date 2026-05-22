@@ -7,9 +7,20 @@ datasource db {
   provider = "postgresql"
 }
 
+model Producer {
+  id        String  @id @default(cuid())
+  name      String
+  quality   String?
+  beanNotes String?
+  variance  String?
+  website   String?
+  beans     Bean[]
+}
+
 model Bean {
   id           String   @id @default(cuid())
-  producer     String
+  producer     Producer @relation(fields: [producerId], references: [id])
+  producerId   String
   name         String
   region       String?
   roastLevel   String

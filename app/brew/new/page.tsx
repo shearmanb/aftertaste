@@ -7,7 +7,7 @@ import { format } from "date-fns";
 
 type Pour = { sequence: number; waterG: number; pauseS: number };
 type WaterProfile = { id: string; brand: string; additives?: string | null };
-type Bean = { id: string; producer: string; name: string; roastLevel: string; region?: string | null; process?: string | null };
+type Bean = { id: string; producer: { name: string }; name: string; roastLevel: string; region?: string | null; process?: string | null };
 type GrindProfile = { id: string; name: string; setting: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number; bloomTimeS: number; bloomWaterG: number; pours: Pour[] };
 type SourceBrew = { brewedAt: string; bean: Bean; waterProfile?: WaterProfile | null; grindProfile: GrindProfile; aidenProfile: AidenProfile };
@@ -97,7 +97,7 @@ function NewBrewPageContent() {
         <div className="bg-amber-950/40 border border-amber-800/40 rounded-xl px-4 py-2.5 mb-5 flex items-center gap-2">
           <span className="text-amber-500 text-sm">③</span>
           <p className="text-amber-300/80 text-xs">
-            Branching from <span className="font-medium text-amber-300">{sourceBrew.bean.producer} — {sourceBrew.bean.name}</span>
+            Branching from <span className="font-medium text-amber-300">{sourceBrew.bean.producer.name} — {sourceBrew.bean.name}</span>
             <span className="text-amber-500/60"> · {format(new Date(sourceBrew.brewedAt), "MMM d, yyyy")}</span>
           </p>
         </div>
@@ -159,7 +159,7 @@ function NewBrewPageContent() {
                       : "bg-stone-900 border-stone-800 hover:border-amber-600"
                   }`}
                 >
-                  <p className="font-semibold text-stone-100">{bean.producer}</p>
+                  <p className="font-semibold text-stone-100">{bean.producer.name}</p>
                   <p className="text-stone-400 text-sm">
                     {bean.name} · {bean.roastLevel}
                     {bean.region ? ` · ${bean.region}` : ""}
@@ -290,7 +290,7 @@ function NewBrewPageContent() {
           <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-1 text-sm">
             <p className="text-stone-400 font-medium mb-2">Brew summary</p>
             {selectedWater && <p className="text-stone-300"><span className="text-stone-500">Water:</span> {selectedWater.brand}{selectedWater.additives ? ` · ${selectedWater.additives}` : ""}</p>}
-            <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer} — {selectedBean?.name}</p>
+            <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer.name} — {selectedBean?.name}</p>
             <p className="text-stone-300"><span className="text-stone-500">Grind:</span> {selectedGrind?.setting} (Ode Gen 2)</p>
             {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}
           </div>

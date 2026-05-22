@@ -1,11 +1,14 @@
 "use client";
 
 import AppShell from "@/components/AppShell";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+type Producer = { id: string; name: string };
 type Bean = {
   id: string;
-  producer: string;
+  producer: Producer;
+  producerId: string;
   name: string;
   region?: string | null;
   roastLevel: string;
@@ -51,13 +54,12 @@ function compressImage(file: File): Promise<string> {
 
 export default function BeansPage() {
   const [beans, setBeans] = useState<Bean[]>([]);
+  const [producers, setProducers] = useState<Producer[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [producerInput, setProducerInput] = useState("");
-  const [useNewProducer, setUseNewProducer] = useState(false);
-  const [newProducer, setNewProducer] = useState("");
+  const [producerId, setProducerId] = useState("");
   const [name, setName] = useState("");
   const [region, setRegion] = useState("");
   const [roastLevel, setRoastLevel] = useState("medium-light");
@@ -70,11 +72,14 @@ export default function BeansPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch("/api/beans").then((r) => r.json()).then(setBeans);
+    Promise.all([
+      fetch("/api/beans").then((r) => r.json()),
+      fetch("/api/producers").then((r) => r.json()),
+    ]).then(([beansData, producersData]) => {
+      setBeans(beansData);
+      setProducers(producersData);
+    });
   }, []);
-
-  const producers = Array.from(new Set(beans.map((b) => b.producer))).sort();
-  const producer = useNewProducer ? newProducer : producerInput;
 
   function toggleNote(note: string) {
     setTastingNotes((prev) =>
@@ -83,15 +88,13 @@ export default function BeansPage() {
   }
 
   function resetForm() {
-    setProducerInput(""); setUseNewProducer(false); setNewProducer("");
-    setName(""); setRegion(""); setRoastLevel("medium-light"); setProcess("");
+    setProducerId(""); setName(""); setRegion(""); setRoastLevel("medium-light"); setProcess("");
     setTastingNotes([]); setImageUrl(""); setImagePreview(null); setProductUrl(""); setNotes("");
   }
 
   function openEdit(bean: Bean) {
     setEditingId(bean.id);
-    setProducerInput(bean.producer);
-    setUseNewProducer(false); setNewProducer("");
+    setProducerId(bean.producerId);
     setName(bean.name);
     setRegion(bean.region ?? "");
     setRoastLevel(bean.roastLevel);
@@ -120,7 +123,8 @@ export default function BeansPage() {
   async function save() {
     setSaving(true);
     const payload = {
-      producer, name,
+      producerId,
+      name,
       region: region || undefined,
       roastLevel,
       process: process || undefined,
@@ -172,27 +176,20 @@ export default function BeansPage() {
 
           <div>
             <label className="text-stone-500 text-xs mb-1 block">Producer *</label>
-            {producers.length > 0 && !useNewProducer ? (
-              <select
-                value={producerInput}
-                onChange={(e) => {
-                  if (e.target.value === "__new__") { setUseNewProducer(true); setProducerInput(""); }
-                  else setProducerInput(e.target.value);
-                }}
-                className="input-field"
-              >
-                <option value="">Select producer...</option>
-                {producers.map((p) => <option key={p} value={p}>{p}</option>)}
-                <option value="__new__">+ Add new producer</option>
-              </select>
+            {producers.length === 0 ? (
+              <p className="text-stone-500 text-sm">
+                No producers yet.{" "}
+                <Link href="/producers" className="text-amber-500 underline">Add a producer first →</Link>
+              </p>
             ) : (
-              <div className="flex gap-2">
-                <input placeholder="New producer name *" value={newProducer} onChange={(e) => setNewProducer(e.target.value)} className="input-field flex-1" />
-                {producers.length > 0 && (
-                  <button onClick={() => { setUseNewProducer(false); setNewProducer(""); }} className="px-3 py-2 bg-stone-800 text-stone-400 rounded-lg text-xs">Cancel</button>
-                )}
-              </div>
+              <select value={producerId} onChange={(e) => setProducerId(e.target.value)} className="input-field">
+                <option value="">Select producer...</option>
+                {producers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
             )}
+            <Link href="/producers" className="text-stone-600 text-xs mt-1 block hover:text-amber-500">
+              Manage producers →
+            </Link>
           </div>
 
           <div>
@@ -272,7 +269,7 @@ export default function BeansPage() {
 
           <div className="flex gap-2">
             <button onClick={closeForm} className="flex-1 py-2 bg-stone-800 text-stone-400 rounded-lg text-sm">Cancel</button>
-            <button onClick={save} disabled={!producer || !name || saving}
+            <button onClick={save} disabled={!producerId || !name || saving}
               className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
               {saving ? "Saving..." : editingId ? "Update" : "Save"}
             </button>
@@ -291,12 +288,12 @@ export default function BeansPage() {
           {beans.map((bean) => (
             <div key={bean.id} className={`bg-stone-900 border rounded-xl overflow-hidden transition-colors ${editingId === bean.id ? "border-amber-600/60" : "border-stone-800"}`}>
               {bean.imageUrl && (
-                <img src={bean.imageUrl} alt={`${bean.producer} ${bean.name}`} className="w-full h-40 object-cover" />
+                <img src={bean.imageUrl} alt={`${bean.producer.name} ${bean.name}`} className="w-full h-40 object-cover" />
               )}
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-semibold text-stone-100">{bean.producer}</p>
+                    <p className="font-semibold text-stone-100">{bean.producer.name}</p>
                     <p className="text-stone-400 text-sm">{bean.name}</p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">

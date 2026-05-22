@@ -228,7 +228,7 @@ function NewBrewPageContent() {
                       : "bg-stone-900 border-stone-800 hover:border-amber-600"
                   }`}
                 >
-                  <p className="font-semibold text-stone-100">{bean.producer.name}</p>
+                  <p className="font-semibold text-stone-100">{bean.producer?.name}</p>
                   <p className="text-stone-400 text-sm">
                     {bean.name} · {bean.roastLevel}
                     {bean.region ? ` · ${bean.region}` : ""}
@@ -362,7 +362,7 @@ function NewBrewPageContent() {
             <p className="text-stone-400 font-medium mb-2">Brew summary</p>
             {selectedWater && <p className="text-stone-300"><span className="text-stone-500">Water:</span> {selectedWater.brand}{selectedWater.additives ? ` · ${selectedWater.additives}` : ""}</p>}
             {selectedFilter && <p className="text-stone-300"><span className="text-stone-500">Filter:</span> {selectedFilter.name}</p>}
-            <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer.name} — {selectedBean?.name}</p>
+            <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer?.name} — {selectedBean?.name}</p>
             <p className="text-stone-300"><span className="text-stone-500">Grind:</span> {selectedGrind?.setting} (Ode Gen 2)</p>
             {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}
           </div>

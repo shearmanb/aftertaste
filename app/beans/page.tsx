@@ -306,12 +306,12 @@ export default function BeansPage() {
           {beans.map((bean) => (
             <div key={bean.id} className={`bg-stone-900 border rounded-xl overflow-hidden transition-colors ${editingId === bean.id ? "border-amber-600/60" : "border-stone-800"}`}>
               {bean.imageUrl && (
-                <img src={bean.imageUrl} alt={`${bean.producer.name} ${bean.name}`} className="w-full h-40 object-cover" />
+                <img src={bean.imageUrl} alt={`${bean.producer?.name ?? ""} ${bean.name}`} className="w-full h-40 object-cover" />
               )}
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-semibold text-stone-100">{bean.producer.name}</p>
+                    <p className="font-semibold text-stone-100">{bean.producer?.name}</p>
                     <p className="text-stone-400 text-sm">{bean.name}</p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">

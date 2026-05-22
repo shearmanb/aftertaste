@@ -127,7 +127,7 @@ export default async function DashboardPage() {
       <div className="fixed bottom-20 right-3 z-10">
         <details className="group">
           <summary className="list-none cursor-pointer text-right">
-            <span className="text-stone-700 text-[10px] hover:text-stone-500 transition-colors select-none">·</span>
+            <span className="text-stone-500 text-base hover:text-stone-300 transition-colors select-none">·</span>
           </summary>
           <p className="text-stone-500 text-[10px] tabular-nums text-right mt-0.5 bg-stone-950/80 rounded px-1.5 py-0.5">
             {process.env.NEXT_PUBLIC_COMMIT_SHA}

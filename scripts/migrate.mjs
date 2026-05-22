@@ -162,6 +162,20 @@ try {
   `);
   console.log("✓ Brew.filterProfileId column");
 
+  await client.query(`ALTER TABLE "Bean" ADD COLUMN IF NOT EXISTS "producerId" TEXT`);
+  await client.query(`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'Bean_producerId_fkey' AND table_name = 'Bean'
+      ) THEN
+        ALTER TABLE "Bean" ADD CONSTRAINT "Bean_producerId_fkey"
+          FOREIGN KEY ("producerId") REFERENCES "Producer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+      END IF;
+    END $$
+  `);
+  console.log("✓ Bean.producerId column");
+
   for (const [category, value] of SEED) {
     await client.query(
       `INSERT INTO "DropdownOption" ("id", "category", "value") VALUES ($1, $2, $3) ON CONFLICT ("category", "value") DO NOTHING`,

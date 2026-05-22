@@ -48,6 +48,14 @@ model FilterProfile {
   brews Brew[]
 }
 
+model DropdownOption {
+  id       String @id @default(cuid())
+  category String
+  value    String
+
+  @@unique([category, value])
+}
+
 model GrindProfile {
   id      String @id @default(cuid())
   name    String

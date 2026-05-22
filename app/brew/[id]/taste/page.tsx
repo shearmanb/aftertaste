@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import TastingSlider from "@/components/TastingSlider";
 
-const COMMON_TAGS = [
+const COMMON_TAGS_FALLBACK = [
   "jasmine", "berry", "citrus", "tropical", "stone fruit", "apple",
   "caramel", "chocolate", "nutty", "brown sugar", "vanilla",
   "roasty", "smoky", "earthy", "floral", "bright", "clean", "complex",
@@ -24,6 +24,7 @@ export default function TastePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
+  const [commonTags, setCommonTags] = useState<string[]>(COMMON_TAGS_FALLBACK);
   const [bagNotes, setBagNotes] = useState<string[]>([]);
   const [overallScore, setOverallScore] = useState(7);
   const [fruit, setFruit] = useState(3);
@@ -41,6 +42,15 @@ export default function TastePage() {
   const [wouldBrewAgain, setWouldBrewAgain] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/options?category=flavorTag")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0)
+          setCommonTags(data.map((o: { value: string }) => o.value));
+      });
+  }, []);
 
   useEffect(() => {
     fetch(`/api/brews/${id}`).then((r) => r.json()).then((data: BrewData) => {
@@ -98,7 +108,7 @@ export default function TastePage() {
 
   const confirmedTags = Object.entries(bagTagStates).filter(([, s]) => s === 1).map(([t]) => t);
   const missedTags = Object.entries(bagTagStates).filter(([, s]) => s === 2).map(([t]) => t);
-  const extraCommonTags = COMMON_TAGS.filter((t) => !bagNotes.includes(t));
+  const extraCommonTags = commonTags.filter((t) => !bagNotes.includes(t));
 
   async function submit() {
     setSubmitting(true);
@@ -165,12 +175,12 @@ export default function TastePage() {
                 <p className="text-stone-500 text-xs font-medium">From the bag</p>
                 <p className="text-stone-700 text-xs">tap once = got it · tap twice = missed</p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {bagNotes.map((tag) => {
                   const state = bagTagStates[tag] ?? 0;
                   return (
                     <button key={tag} onClick={() => cycleBagTag(tag)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-all select-none ${
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all select-none ${
                         state === 1
                           ? "bg-amber-600 text-white"
                           : state === 2
@@ -189,10 +199,10 @@ export default function TastePage() {
             <p className="text-stone-500 text-xs font-medium mb-2">
               {bagNotes.length > 0 ? "Bonus finds — not on bag" : "Flavor notes"}
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {extraCommonTags.map((tag) => (
                 <button key={tag} onClick={() => toggleBonus(tag)}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  className={`px-2.5 py-0.5 rounded-full text-xs transition-colors ${
                     bonusTags.includes(tag)
                       ? "bg-sky-800 text-sky-200"
                       : "bg-stone-800 text-stone-400 hover:bg-stone-700"

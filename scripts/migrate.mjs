@@ -1,4 +1,5 @@
 import pg from "pg";
+import { createHash } from "crypto";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -104,7 +105,49 @@ const TABLES = [
     CONSTRAINT "TastingNote_brewId_fkey" FOREIGN KEY ("brewId")
       REFERENCES "Brew"("id") ON DELETE CASCADE ON UPDATE CASCADE
   `],
+  [`DropdownOption`, `
+    "id"       TEXT NOT NULL,
+    "category" TEXT NOT NULL,
+    "value"    TEXT NOT NULL,
+    CONSTRAINT "DropdownOption_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "DropdownOption_category_value_key" UNIQUE ("category", "value")
+  `],
 ];
+
+const SEED = [
+  // process
+  ["process", "Washed"], ["process", "Natural"], ["process", "Honey"],
+  ["process", "Anaerobic Natural"], ["process", "Anaerobic Washed"],
+  ["process", "Wet-Hulled"], ["process", "Other"],
+  // roastLevel
+  ["roastLevel", "light"], ["roastLevel", "medium-light"], ["roastLevel", "medium"],
+  ["roastLevel", "medium-dark"], ["roastLevel", "dark"],
+  // beanTastingNote
+  ["beanTastingNote", "blueberry"], ["beanTastingNote", "strawberry"], ["beanTastingNote", "raspberry"],
+  ["beanTastingNote", "cherry"], ["beanTastingNote", "stone fruit"], ["beanTastingNote", "peach"],
+  ["beanTastingNote", "mango"], ["beanTastingNote", "tropical"], ["beanTastingNote", "passionfruit"],
+  ["beanTastingNote", "citrus"], ["beanTastingNote", "lemon"], ["beanTastingNote", "orange"],
+  ["beanTastingNote", "grapefruit"], ["beanTastingNote", "jasmine"], ["beanTastingNote", "rose"],
+  ["beanTastingNote", "floral"], ["beanTastingNote", "lavender"], ["beanTastingNote", "caramel"],
+  ["beanTastingNote", "brown sugar"], ["beanTastingNote", "honey"], ["beanTastingNote", "chocolate"],
+  ["beanTastingNote", "dark chocolate"], ["beanTastingNote", "vanilla"], ["beanTastingNote", "maple"],
+  ["beanTastingNote", "hazelnut"], ["beanTastingNote", "almond"], ["beanTastingNote", "nutty"],
+  ["beanTastingNote", "cinnamon"], ["beanTastingNote", "cardamom"], ["beanTastingNote", "bright"],
+  ["beanTastingNote", "clean"], ["beanTastingNote", "complex"], ["beanTastingNote", "juicy"],
+  ["beanTastingNote", "tea-like"], ["beanTastingNote", "earthy"], ["beanTastingNote", "smoky"],
+  ["beanTastingNote", "wine"],
+  // flavorTag
+  ["flavorTag", "jasmine"], ["flavorTag", "berry"], ["flavorTag", "citrus"],
+  ["flavorTag", "tropical"], ["flavorTag", "stone fruit"], ["flavorTag", "apple"],
+  ["flavorTag", "caramel"], ["flavorTag", "chocolate"], ["flavorTag", "nutty"],
+  ["flavorTag", "brown sugar"], ["flavorTag", "vanilla"], ["flavorTag", "roasty"],
+  ["flavorTag", "smoky"], ["flavorTag", "earthy"], ["flavorTag", "floral"],
+  ["flavorTag", "bright"], ["flavorTag", "clean"], ["flavorTag", "complex"],
+];
+
+function seedId(category, value) {
+  return createHash("md5").update(`${category}:${value}`).digest("hex");
+}
 
 const client = await pool.connect();
 try {
@@ -118,6 +161,14 @@ try {
         REFERENCES "FilterProfile"("id") ON DELETE SET NULL ON UPDATE CASCADE
   `);
   console.log("✓ Brew.filterProfileId column");
+
+  for (const [category, value] of SEED) {
+    await client.query(
+      `INSERT INTO "DropdownOption" ("id", "category", "value") VALUES ($1, $2, $3) ON CONFLICT ("category", "value") DO NOTHING`,
+      [seedId(category, value), category, value]
+    );
+  }
+  console.log(`✓ DropdownOption seeded (${SEED.length} defaults)`);
   console.log("Schema applied.");
 } finally {
   client.release();

@@ -80,21 +80,27 @@ function NewBrewPageContent() {
 
   async function submit() {
     setSubmitting(true);
-    const res = await fetch("/api/brews", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        waterProfileId: selectedWater?.id,
-        filterProfileId: selectedFilter?.id,
-        beanId: selectedBean!.id,
-        grindProfileId: selectedGrind!.id,
-        aidenProfileId: selectedAiden!.id,
-        roastedOn: roastedOn || undefined,
-        openedOn: openedOn || undefined,
-      }),
-    });
-    const brew = await res.json();
-    router.push(`/brew/${brew.id}/taste`);
+    try {
+      const res = await fetch("/api/brews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          waterProfileId: selectedWater?.id,
+          filterProfileId: selectedFilter?.id,
+          beanId: selectedBean!.id,
+          grindProfileId: selectedGrind!.id,
+          aidenProfileId: selectedAiden!.id,
+          roastedOn: roastedOn || undefined,
+          openedOn: openedOn || undefined,
+        }),
+      });
+      const brew = await res.json();
+      if (!res.ok) throw new Error(brew.error ?? `HTTP ${res.status}`);
+      router.push(`/brew/${brew.id}/taste`);
+    } catch (err) {
+      alert(err instanceof Error ? `Save failed: ${err.message}` : "Save failed");
+      setSubmitting(false);
+    }
   }
 
   const totalSteps = 5;
@@ -120,7 +126,7 @@ function NewBrewPageContent() {
 
       {sourceBrew && (
         <div className="bg-amber-950/40 border border-amber-800/40 rounded-xl px-4 py-2.5 mb-5 flex items-center gap-2">
-          <span className="text-amber-500 text-sm">④</span>
+          <span className="text-amber-500 text-sm">③</span>
           <p className="text-amber-300/80 text-xs">
             Branching from <span className="font-medium text-amber-300">{sourceBrew.bean.producer.name} — {sourceBrew.bean.name}</span>
             <span className="text-amber-500/60"> · {format(new Date(sourceBrew.brewedAt), "MMM d, yyyy")}</span>

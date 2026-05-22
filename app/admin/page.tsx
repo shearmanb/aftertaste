@@ -10,6 +10,7 @@ const CATEGORIES = [
   { key: "roastLevel", label: "Roast Level", hint: "e.g. light, medium-light, dark" },
   { key: "beanTastingNote", label: "Bag Tasting Notes", hint: "e.g. blueberry, jasmine, caramel" },
   { key: "flavorTag", label: "Flavor Tags (Tasting)", hint: "e.g. berry, citrus, roasty" },
+  { key: "brewIssue", label: "Brew Issues", hint: "e.g. channeling, wrong dose, stale beans" },
 ];
 
 export default function AdminPage() {

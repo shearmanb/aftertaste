@@ -21,6 +21,8 @@ export default function EditBrewPage() {
   const [beanId, setBeanId] = useState<string>("");
   const [grindProfileId, setGrindProfileId] = useState<string>("");
   const [aidenProfileId, setAidenProfileId] = useState<string>("");
+  const [roastedOn, setRoastedOn] = useState("");
+  const [openedOn, setOpenedOn] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -36,6 +38,8 @@ export default function EditBrewPage() {
       setBeanId(brew.beanId);
       setGrindProfileId(brew.grindProfileId);
       setAidenProfileId(brew.aidenProfileId);
+      if (brew.roastedOn) setRoastedOn(brew.roastedOn.split("T")[0]);
+      if (brew.openedOn) setOpenedOn(brew.openedOn.split("T")[0]);
       setWaterProfiles(water);
       setBeans(beansData);
       setGrindProfiles(grind);
@@ -54,6 +58,8 @@ export default function EditBrewPage() {
         waterProfileId: waterProfileId || undefined,
         grindProfileId,
         aidenProfileId,
+        roastedOn: roastedOn || null,
+        openedOn: openedOn || null,
       }),
     });
     router.push(`/brew/${id}`);
@@ -124,6 +130,21 @@ export default function EditBrewPage() {
                 <p className="text-stone-500 text-xs">{a.coffeeG}g / {a.waterG}g · {a.tempF}°F</p>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Bean freshness */}
+        <div>
+          <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Bean Freshness <span className="text-stone-600 normal-case font-normal">(optional)</span></label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-stone-500 text-xs block mb-1">Roasted on</label>
+              <input type="date" value={roastedOn} onChange={(e) => setRoastedOn(e.target.value)} className="input-field" />
+            </div>
+            <div>
+              <label className="text-stone-500 text-xs block mb-1">Bag opened</label>
+              <input type="date" value={openedOn} onChange={(e) => setOpenedOn(e.target.value)} className="input-field" />
+            </div>
           </div>
         </div>
 

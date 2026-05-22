@@ -104,34 +104,41 @@ export default function ProducersPage() {
 
   async function save() {
     setSaving(true);
-    const payload = {
-      name,
-      quality: quality || undefined,
-      beanNotes: beanNotes || undefined,
-      variance: variance || undefined,
-      website: website || undefined,
-    };
+    try {
+      const payload = {
+        name,
+        quality: quality || undefined,
+        beanNotes: beanNotes || undefined,
+        variance: variance || undefined,
+        website: website || undefined,
+      };
 
-    if (editingId) {
-      const res = await fetch(`/api/producers/${editingId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const updated = await res.json();
-      setProducers((prev) => prev.map((p) => p.id === editingId ? { ...updated, _count: p._count } : p));
-    } else {
-      const res = await fetch("/api/producers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const producer = await res.json();
-      setProducers((prev) => [...prev, { ...producer, _count: { beans: 0 } }]);
+      if (editingId) {
+        const res = await fetch(`/api/producers/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+        const updated = await res.json();
+        setProducers((prev) => prev.map((p) => p.id === editingId ? { ...updated, _count: p._count } : p));
+      } else {
+        const res = await fetch("/api/producers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+        const producer = await res.json();
+        setProducers((prev) => [...prev, { ...producer, _count: { beans: 0 } }]);
+      }
+      closeForm();
+    } catch (err) {
+      console.error(err);
+      alert("Save failed — check your connection and try again.");
+    } finally {
+      setSaving(false);
     }
-
-    closeForm();
-    setSaving(false);
   }
 
   const formVisible = showForm || editingId !== null;

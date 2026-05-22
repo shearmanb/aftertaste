@@ -122,38 +122,45 @@ export default function BeansPage() {
 
   async function save() {
     setSaving(true);
-    const payload = {
-      producerId,
-      name,
-      region: region || undefined,
-      roastLevel,
-      process: process || undefined,
-      tastingNotes,
-      imageUrl: imageUrl || undefined,
-      productUrl: productUrl || undefined,
-      notes: notes || undefined,
-    };
+    try {
+      const payload = {
+        producerId,
+        name,
+        region: region || undefined,
+        roastLevel,
+        process: process || undefined,
+        tastingNotes,
+        imageUrl: imageUrl || undefined,
+        productUrl: productUrl || undefined,
+        notes: notes || undefined,
+      };
 
-    if (editingId) {
-      const res = await fetch(`/api/beans/${editingId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const updated = await res.json();
-      setBeans((prev) => prev.map((b) => b.id === editingId ? updated : b));
-    } else {
-      const res = await fetch("/api/beans", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const bean = await res.json();
-      setBeans((prev) => [...prev, bean]);
+      if (editingId) {
+        const res = await fetch(`/api/beans/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+        const updated = await res.json();
+        setBeans((prev) => prev.map((b) => b.id === editingId ? updated : b));
+      } else {
+        const res = await fetch("/api/beans", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+        const bean = await res.json();
+        setBeans((prev) => [...prev, bean]);
+      }
+      closeForm();
+    } catch (err) {
+      console.error(err);
+      alert("Save failed — check your connection and try again.");
+    } finally {
+      setSaving(false);
     }
-
-    closeForm();
-    setSaving(false);
   }
 
   const formVisible = showForm || editingId !== null;

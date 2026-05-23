@@ -31,7 +31,7 @@ export default function TastePage() {
   const [brewIssues, setBrewIssues] = useState<string[]>([]);
   const [overallScore, setOverallScore] = useState(7);
   const [fruit, setFruit] = useState(3);
-  const [strength, setStrength] = useState(3);
+  const [strength, setStrength] = useState(0); // signed position: -10=too weak, 0=perfect, +10=too strong
   const [chocolate, setChocolate] = useState(2);
   const [sourness, setSourness] = useState(1);
   // 0 = unrated, 1 = tasted ✓, 2 = missed ✗
@@ -70,7 +70,7 @@ export default function TastePage() {
         const tn = data.tastingNote;
         setOverallScore(tn.overallScore);
         setFruit(tn.fruit);
-        setStrength(tn.bitterness);
+        setStrength(0); // reset to center; old bitterness scores don't map to a direction
         setChocolate(tn.chocolate);
         setSourness(tn.sourness);
         setInitialThoughts(tn.initialThoughts ?? "");
@@ -128,7 +128,7 @@ export default function TastePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          overallScore, fruit, bitterness: strength, chocolate, sourness,
+          overallScore, fruit, bitterness: Math.max(0, 5 - Math.abs(strength) * 0.5), chocolate, sourness,
           confirmedTags, missedTags, bonusTags,
           flavorTags: [...confirmedTags, ...bonusTags],
           initialThoughts: initialThoughts || undefined,
@@ -179,7 +179,7 @@ export default function TastePage() {
           <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">Flavor Dimensions</p>
           <TastingSlider label="Fruit" value={fruit} onChange={setFruit} lowLabel="None" highLabel="Tons" />
           <TastingSlider label="Chocolate / Roastness" value={chocolate} onChange={setChocolate} lowLabel="None" highLabel="Rich" />
-          <TastingSlider label="Strength" value={strength} onChange={setStrength} lowLabel="Too weak" midLabel="perfect" highLabel="Too strong" />
+          <TastingSlider label="Strength" value={strength} onChange={setStrength} symmetric />
           <TastingSlider label="Sourness / Off-flavors" value={sourness} onChange={setSourness} lowLabel="None" highLabel="Sharp" />
         </div>
 

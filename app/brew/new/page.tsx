@@ -12,6 +12,7 @@ type Bean = { id: string; producer: { name: string }; name: string; roastLevel: 
 type GrindProfile = { id: string; name: string; setting: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number; bloomTimeS: number; bloomWaterG: number; pours: Pour[] };
 type SourceBrew = { brewedAt: string; roastedOn?: string | null; openedOn?: string | null; bean: Bean; waterProfile?: WaterProfile | null; filterProfile?: FilterProfile | null; grindProfile: GrindProfile; aidenProfile: AidenProfile };
+type Producer = { id: string; name: string };
 
 function NewBrewPageContent() {
   const router = useRouter();
@@ -36,6 +37,19 @@ function NewBrewPageContent() {
   const [openedOn, setOpenedOn] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Quick-add bean form
+  const [producers, setProducers] = useState<Producer[]>([]);
+  const [roastLevels, setRoastLevels] = useState<string[]>([]);
+  const [processes, setProcesses] = useState<string[]>([]);
+  const [showAddBean, setShowAddBean] = useState(false);
+  const [addingBean, setAddingBean] = useState(false);
+  const [newProducerId, setNewProducerId] = useState("");
+  const [newProducerName, setNewProducerName] = useState("");
+  const [newBeanName, setNewBeanName] = useState("");
+  const [newRoastLevel, setNewRoastLevel] = useState("");
+  const [newRegion, setNewRegion] = useState("");
+  const [newProcess, setNewProcess] = useState("");
+
   useEffect(() => {
     const fetches = [
       fetch("/api/profiles/water").then((r) => r.json()),
@@ -43,17 +57,25 @@ function NewBrewPageContent() {
       fetch("/api/beans").then((r) => r.json()),
       fetch("/api/profiles/grind").then((r) => r.json()),
       fetch("/api/profiles/aiden").then((r) => r.json()),
+      fetch("/api/producers").then((r) => r.json()),
+      fetch("/api/options?category=roastLevel").then((r) => r.ok ? r.json() : []),
+      fetch("/api/options?category=process").then((r) => r.ok ? r.json() : []),
     ];
     const sourcePromise = fromId
       ? fetch(`/api/brews/${fromId}`).then((r) => r.json())
       : Promise.resolve(null);
 
-    Promise.all([...fetches, sourcePromise]).then(([water, filter, beansData, grind, aiden, source]) => {
+    Promise.all([...fetches, sourcePromise]).then(([water, filter, beansData, grind, aiden, producersData, roastData, processData, source]) => {
       setWaterProfiles(Array.isArray(water) ? water : []);
       setFilterProfiles(Array.isArray(filter) ? filter : []);
       setBeans(Array.isArray(beansData) ? beansData : []);
       setGrindProfiles(Array.isArray(grind) ? grind : []);
       setAidenProfiles(Array.isArray(aiden) ? aiden : []);
+      setProducers(Array.isArray(producersData) ? producersData : []);
+      const rl = Array.isArray(roastData) ? roastData.map((o: { value: string }) => o.value) : [];
+      setRoastLevels(rl);
+      setNewRoastLevel(rl[0] ?? "");
+      setProcesses(Array.isArray(processData) ? processData.map((o: { value: string }) => o.value) : []);
       if (source) {
         setSourceBrew(source);
         if (source.waterProfile) setSelectedWater(source.waterProfile);
@@ -102,6 +124,49 @@ function NewBrewPageContent() {
     } catch (err) {
       alert(err instanceof Error ? `Save failed: ${err.message}` : "Save failed");
       setSubmitting(false);
+    }
+  }
+
+  async function addBean() {
+    if (!newBeanName.trim() || !newRoastLevel) return;
+    setAddingBean(true);
+    try {
+      let producerId = newProducerId;
+      if (!producerId) {
+        if (!newProducerName.trim()) { setAddingBean(false); return; }
+        const pr = await fetch("/api/producers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: newProducerName.trim() }),
+        });
+        const newProd = await pr.json();
+        if (!pr.ok) throw new Error(newProd.error ?? "Failed to create producer");
+        setProducers((p) => [...p, newProd]);
+        producerId = newProd.id;
+      }
+      const br = await fetch("/api/beans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          producerId,
+          name: newBeanName.trim(),
+          roastLevel: newRoastLevel,
+          region: newRegion.trim() || undefined,
+          process: newProcess || undefined,
+        }),
+      });
+      const newBean = await br.json();
+      if (!br.ok) throw new Error(newBean.error ?? "Failed to create bean");
+      setBeans((b) => [newBean, ...b]);
+      setSelectedBean(newBean);
+      setShowAddBean(false);
+      setNewProducerId(""); setNewProducerName(""); setNewBeanName("");
+      setNewRegion(""); setNewProcess("");
+      setStep(4);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setAddingBean(false);
     }
   }
 
@@ -199,11 +264,77 @@ function NewBrewPageContent() {
 
       {step === 3 && (
         <div>
-          <p className="text-stone-400 text-sm mb-4 font-medium">Select beans</p>
-          {beans.length === 0 ? (
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-stone-400 text-sm font-medium">Select beans</p>
+            <button onClick={() => setShowAddBean((v) => !v)}
+              className="text-amber-500 hover:text-amber-400 text-sm font-medium">
+              {showAddBean ? "Cancel" : "+ New bean"}
+            </button>
+          </div>
+
+          {showAddBean && (
+            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
+              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">Quick add bean</p>
+
+              {/* Producer */}
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Producer</label>
+                <select value={newProducerId} onChange={(e) => { setNewProducerId(e.target.value); setNewProducerName(""); }}
+                  className="input-field">
+                  <option value="">+ New producer…</option>
+                  {producers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                {!newProducerId && (
+                  <input type="text" placeholder="Producer name" value={newProducerName}
+                    onChange={(e) => setNewProducerName(e.target.value)}
+                    className="input-field mt-2" />
+                )}
+              </div>
+
+              {/* Bean name */}
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Name / blend</label>
+                <input type="text" placeholder="e.g. Yirgacheffe Natural" value={newBeanName}
+                  onChange={(e) => setNewBeanName(e.target.value)}
+                  className="input-field" />
+              </div>
+
+              {/* Roast level */}
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Roast level</label>
+                <select value={newRoastLevel} onChange={(e) => setNewRoastLevel(e.target.value)} className="input-field">
+                  {roastLevels.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+
+              {/* Region (optional) */}
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Region <span className="text-stone-700">(optional)</span></label>
+                <input type="text" placeholder="e.g. Yirgacheffe" value={newRegion}
+                  onChange={(e) => setNewRegion(e.target.value)}
+                  className="input-field" />
+              </div>
+
+              {/* Process (optional) */}
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Process <span className="text-stone-700">(optional)</span></label>
+                <select value={newProcess} onChange={(e) => setNewProcess(e.target.value)} className="input-field">
+                  <option value="">—</option>
+                  {processes.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+
+              <button onClick={addBean} disabled={addingBean || !newBeanName.trim() || !newRoastLevel || (!newProducerId && !newProducerName.trim())}
+                className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm">
+                {addingBean ? "Saving…" : "Add & select →"}
+              </button>
+            </div>
+          )}
+
+          {!showAddBean && beans.length === 0 ? (
             <div className="text-center py-10 text-stone-500">
               <p>No beans yet.</p>
-              <a href="/beans" className="text-amber-500 underline text-sm mt-1 block">Add beans first →</a>
+              <p className="text-xs mt-1">Use "+ New bean" above to add one.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -219,7 +350,7 @@ function NewBrewPageContent() {
               ))}
             </div>
           )}
-          {selectedBean && (
+          {selectedBean && !showAddBean && (
             <button onClick={() => setStep(4)} className="w-full mt-4 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">Next →</button>
           )}
         </div>

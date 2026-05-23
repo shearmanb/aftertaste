@@ -169,6 +169,7 @@ try {
   await client.query(`ALTER TABLE "Brew" ADD COLUMN IF NOT EXISTS "roastedOn" TIMESTAMP(3)`);
   await client.query(`ALTER TABLE "Brew" ADD COLUMN IF NOT EXISTS "openedOn" TIMESTAMP(3)`);
   await client.query(`ALTER TABLE "Brew" ADD COLUMN IF NOT EXISTS "brewIssues" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]`);
+  await client.query(`ALTER TABLE "Brew" ADD COLUMN IF NOT EXISTS "actualCoffeeG" DOUBLE PRECISION`);
   console.log("✓ Brew columns");
 
   await client.query(`ALTER TABLE "Bean" ADD COLUMN IF NOT EXISTS "productUrl" TEXT`);

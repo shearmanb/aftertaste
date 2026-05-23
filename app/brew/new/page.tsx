@@ -30,6 +30,7 @@ function NewBrewPageContent() {
   const [selectedBean, setSelectedBean] = useState<Bean | null>(null);
   const [selectedGrind, setSelectedGrind] = useState<GrindProfile | null>(null);
   const [selectedAiden, setSelectedAiden] = useState<AidenProfile | null>(null);
+  const [actualCoffeeG, setActualCoffeeG] = useState<string>("");
   const [sourceBrew, setSourceBrew] = useState<SourceBrew | null>(null);
   const [roastedOn, setRoastedOn] = useState("");
   const [openedOn, setOpenedOn] = useState("");
@@ -90,6 +91,7 @@ function NewBrewPageContent() {
           beanId: selectedBean!.id,
           grindProfileId: selectedGrind!.id,
           aidenProfileId: selectedAiden!.id,
+          actualCoffeeG: actualCoffeeG !== "" ? parseFloat(actualCoffeeG) : undefined,
           roastedOn: roastedOn || undefined,
           openedOn: openedOn || undefined,
         }),
@@ -257,7 +259,7 @@ function NewBrewPageContent() {
           <p className="text-stone-400 text-sm mb-4 font-medium">Select Aiden profile</p>
           <div className="space-y-2 mb-4">
             {aidenProfiles.map((ap) => (
-              <button key={ap.id} onClick={() => setSelectedAiden(ap)}
+              <button key={ap.id} onClick={() => { setSelectedAiden(ap); setActualCoffeeG(String(ap.coffeeG)); }}
                 className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${
                   selectedAiden?.id === ap.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"
                 }`}>
@@ -300,6 +302,21 @@ function NewBrewPageContent() {
                     <span className="text-stone-400 text-xs w-10 text-right">{pour.pauseS}s</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+          {selectedAiden && (
+            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
+              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-1">Actual coffee used</p>
+              <p className="text-stone-600 text-xs mb-3">
+                Profile recommends <span className="text-amber-500 font-medium">{selectedAiden.coffeeG}g</span>
+                {" "}— adjust if you used a different amount
+              </p>
+              <div className="flex items-center gap-2">
+                <input type="number" min="0" step="0.1" value={actualCoffeeG}
+                  onChange={(e) => setActualCoffeeG(e.target.value)}
+                  className="bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 text-sm w-28 text-right" />
+                <span className="text-stone-400 text-sm">g</span>
               </div>
             </div>
           )}

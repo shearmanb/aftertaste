@@ -24,6 +24,7 @@ export default function EditBrewPage() {
   const [beanId, setBeanId] = useState<string>("");
   const [grindProfileId, setGrindProfileId] = useState<string>("");
   const [aidenProfileId, setAidenProfileId] = useState<string>("");
+  const [actualCoffeeG, setActualCoffeeG] = useState<string>("");
   const [roastedOn, setRoastedOn] = useState("");
   const [openedOn, setOpenedOn] = useState("");
   const [saving, setSaving] = useState(false);
@@ -43,6 +44,7 @@ export default function EditBrewPage() {
       setBeanId(brew.beanId);
       setGrindProfileId(brew.grindProfileId);
       setAidenProfileId(brew.aidenProfileId);
+      if (brew.actualCoffeeG != null) setActualCoffeeG(String(brew.actualCoffeeG));
       if (brew.roastedOn) setRoastedOn(brew.roastedOn.split("T")[0]);
       if (brew.openedOn) setOpenedOn(brew.openedOn.split("T")[0]);
       setWaterProfiles(Array.isArray(water) ? water : []);
@@ -65,6 +67,7 @@ export default function EditBrewPage() {
         filterProfileId: filterProfileId || undefined,
         grindProfileId,
         aidenProfileId,
+        actualCoffeeG: actualCoffeeG !== "" ? parseFloat(actualCoffeeG) : null,
         roastedOn: roastedOn || null,
         openedOn: openedOn || null,
       }),
@@ -142,6 +145,24 @@ export default function EditBrewPage() {
                 <p className="text-stone-500 text-xs">{a.coffeeG}g / {a.waterG}g · {a.tempF}°F</p>
               </button>
             ))}
+          </div>
+        </div>
+        <div>
+          <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">
+            Actual coffee used <span className="text-stone-600 normal-case font-normal">(optional)</span>
+          </label>
+          {(() => {
+            const profile = aidenProfiles.find((a) => a.id === aidenProfileId);
+            return profile ? (
+              <p className="text-stone-600 text-xs mb-2">Profile recommends <span className="text-amber-500">{profile.coffeeG}g</span></p>
+            ) : null;
+          })()}
+          <div className="flex items-center gap-2">
+            <input type="number" min="0" step="0.1" value={actualCoffeeG}
+              onChange={(e) => setActualCoffeeG(e.target.value)}
+              placeholder="g (leave blank to use profile default)"
+              className="bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 text-sm w-full text-right" />
+            <span className="text-stone-400 text-sm shrink-0">g</span>
           </div>
         </div>
         <div>

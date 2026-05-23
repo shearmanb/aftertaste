@@ -27,7 +27,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   try {
     const { id } = await params;
     const body = await req.json();
-    const { beanId, waterProfileId, filterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn, brewIssues } = body;
+    const { beanId, waterProfileId, filterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn, brewIssues, actualCoffeeG } = body;
     const data: Record<string, unknown> = {};
     if (beanId !== undefined) data.beanId = beanId;
     if ("waterProfileId" in body) data.waterProfileId = waterProfileId || null;
@@ -37,6 +37,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if ("roastedOn" in body) data.roastedOn = roastedOn ? new Date(roastedOn) : null;
     if ("openedOn" in body) data.openedOn = openedOn ? new Date(openedOn) : null;
     if (brewIssues !== undefined) data.brewIssues = brewIssues;
+    if ("actualCoffeeG" in body) data.actualCoffeeG = typeof actualCoffeeG === "number" ? actualCoffeeG : null;
     const brew = await prisma.brew.update({
       where: { id },
       data,

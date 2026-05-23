@@ -56,7 +56,23 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
           {brew.filterProfile && <Row label="Filter" value={brew.filterProfile.name} />}
           <Row label="Grind" value={`${grind} (Ode Gen 2)`} />
           <Row label="Profile" value={brew.aidenProfile.name} />
-          <Row label="Ratio" value={`${ratio}:1 (${brew.aidenProfile.coffeeG}g / ${brew.aidenProfile.waterG}g)`} />
+          {brew.actualCoffeeG != null ? (
+            <>
+              <Row label="Coffee used" value={`${brew.actualCoffeeG}g`} />
+              {brew.actualCoffeeG !== brew.aidenProfile.coffeeG && (
+                <div className="flex justify-between items-baseline text-sm">
+                  <span className="text-stone-500">vs. profile</span>
+                  <span className={brew.actualCoffeeG > brew.aidenProfile.coffeeG ? "text-amber-400" : "text-sky-400"}>
+                    {brew.actualCoffeeG > brew.aidenProfile.coffeeG ? "+" : ""}
+                    {(brew.actualCoffeeG - brew.aidenProfile.coffeeG).toFixed(1)}g from {brew.aidenProfile.coffeeG}g
+                  </span>
+                </div>
+              )}
+              <Row label="Ratio (actual)" value={`${(brew.aidenProfile.waterG / brew.actualCoffeeG).toFixed(1)}:1 (${brew.actualCoffeeG}g / ${brew.aidenProfile.waterG}g)`} />
+            </>
+          ) : (
+            <Row label="Ratio" value={`${ratio}:1 (${brew.aidenProfile.coffeeG}g / ${brew.aidenProfile.waterG}g)`} />
+          )}
           <Row label="Temp" value={`${temp}°F`} />
           <Row label="Bloom" value={`${brew.aidenProfile.bloomWaterG}g / ${brew.aidenProfile.bloomTimeS}s`} />
           {brew.roastedOn && (

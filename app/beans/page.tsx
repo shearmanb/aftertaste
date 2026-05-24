@@ -3,6 +3,7 @@
 import AppShell from "@/components/AppShell";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Producer = { id: string; name: string };
 type Bean = {
@@ -41,6 +42,7 @@ function compressImage(file: File): Promise<string> {
 }
 
 export default function BeansPage() {
+  const router = useRouter();
   const [beans, setBeans] = useState<Bean[]>([]);
   const [producers, setProducers] = useState<Producer[]>([]);
   const [roastLevels, setRoastLevels] = useState<string[]>([]);
@@ -306,14 +308,16 @@ export default function BeansPage() {
           {beans.map((bean) => (
             <div key={bean.id} className={`bg-stone-900 border rounded-xl overflow-hidden transition-colors ${editingId === bean.id ? "border-amber-600/60" : "border-stone-800"}`}>
               {bean.imageUrl && (
-                <img src={bean.imageUrl} alt={`${bean.producer.name} ${bean.name}`} className="w-full h-40 object-cover" />
+                <button onClick={() => router.push(`/beans/${bean.id}`)} className="block w-full">
+                  <img src={bean.imageUrl} alt={`${bean.producer.name} ${bean.name}`} className="w-full h-40 object-cover" />
+                </button>
               )}
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
+                  <button onClick={() => router.push(`/beans/${bean.id}`)} className="min-w-0 text-left">
                     <p className="font-semibold text-stone-100">{bean.producer.name}</p>
                     <p className="text-stone-400 text-sm">{bean.name}</p>
-                  </div>
+                  </button>
                   <div className="flex items-center gap-1 shrink-0">
                     {bean.productUrl && (
                       <a href={bean.productUrl} target="_blank" rel="noopener noreferrer"

@@ -12,7 +12,7 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const brew = await prisma.brew.findUnique({
     where: { id },
-    include: { bean: { include: { producer: true } }, waterProfile: true, filterProfile: true, grindProfile: true, aidenProfile: true, tastingNote: true },
+    include: { bean: { include: { producer: true } }, beanBag: true, waterProfile: true, filterProfile: true, grindProfile: true, aidenProfile: true, tastingNote: true },
   });
   if (!brew) notFound();
 
@@ -36,7 +36,14 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
 
       <div className="space-y-4">
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-2">
-          <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Bean</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">Bean</p>
+            {brew.bagBrewIndex != null && (
+              <span className="bg-amber-900/40 text-amber-400 text-xs px-2 py-0.5 rounded-full border border-amber-800/40">
+                Brew #{brew.bagBrewIndex} from bag
+              </span>
+            )}
+          </div>
           <Row label="Producer" value={brew.bean.producer.name} />
           <Row label="Name" value={brew.bean.name} />
           {brew.bean.region && <Row label="Region" value={brew.bean.region} />}
@@ -75,15 +82,23 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
           )}
           <Row label="Temp" value={`${temp}°F`} />
           <Row label="Bloom" value={`${brew.aidenProfile.bloomWaterG}g / ${brew.aidenProfile.bloomTimeS}s`} />
-          {brew.roastedOn && (
-            <Row label="Roasted" value={format(brew.roastedOn, "MMM d, yyyy")} />
-          )}
-          {brew.openedOn && (
-            <Row label="Bag opened" value={format(brew.openedOn, "MMM d, yyyy")} />
-          )}
-          {brew.roastedOn && (() => {
-            const days = Math.round((new Date(brew.brewedAt).getTime() - new Date(brew.roastedOn!).getTime()) / 86400000);
-            return <Row label="Days from roast" value={`${days} days`} />;
+          {(() => {
+            const roastedOn = brew.beanBag?.roastedOn ?? brew.roastedOn;
+            const openedOn = brew.beanBag?.openedOn ?? brew.openedOn;
+            return (
+              <>
+                {roastedOn && <Row label="Roasted" value={format(new Date(roastedOn), "MMM d, yyyy")} />}
+                {openedOn && <Row label="Bag opened" value={format(new Date(openedOn), "MMM d, yyyy")} />}
+                {roastedOn && (() => {
+                  const days = Math.round((new Date(brew.brewedAt).getTime() - new Date(roastedOn).getTime()) / 86400000);
+                  return <Row label="Days from roast" value={`${days} days`} />;
+                })()}
+                {openedOn && brew.bagBrewIndex != null && (() => {
+                  const days = Math.round((new Date(brew.brewedAt).getTime() - new Date(openedOn).getTime()) / 86400000);
+                  return <Row label="Days since opening" value={`${days} days`} />;
+                })()}
+              </>
+            );
           })()}
           {(brew as any).brewIssues?.length > 0 && (
             <div className="pt-1">

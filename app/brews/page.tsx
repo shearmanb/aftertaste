@@ -8,6 +8,7 @@ import { format, formatDistanceToNow } from "date-fns";
 type Brew = {
   id: string;
   brewedAt: string;
+  bagBrewIndex?: number | null;
   bean: { producer: { name: string }; name: string; roastLevel: string };
   grindProfile: { name: string; setting: number };
   aidenProfile: { name: string };
@@ -60,9 +61,16 @@ export default function BrewsPage() {
             <div key={brew.id} className="bg-stone-900 border border-stone-800 rounded-xl p-4">
               <div className="flex items-start justify-between gap-3">
                 <Link href={`/brew/${brew.id}`} className="flex-1 min-w-0">
-                  <p className="font-semibold text-stone-100 truncate">
-                    {brew.bean.producer.name} — {brew.bean.name}
-                  </p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="font-semibold text-stone-100 truncate">
+                      {brew.bean.producer.name} — {brew.bean.name}
+                    </p>
+                    {brew.bagBrewIndex != null && (
+                      <span className="shrink-0 bg-amber-900/40 text-amber-500 text-[10px] px-1.5 py-0.5 rounded-full border border-amber-800/40">
+                        #{brew.bagBrewIndex}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-stone-500 text-xs mt-0.5">
                     {format(new Date(brew.brewedAt), "MMM d, yyyy · h:mm a")}
                     <span className="text-stone-600"> · {formatDistanceToNow(new Date(brew.brewedAt), { addSuffix: true })}</span>

@@ -176,6 +176,39 @@ try {
   console.log("✓ Bean columns");
 
   await client.query(`
+    CREATE TABLE IF NOT EXISTS "BeanBag" (
+      "id"          TEXT NOT NULL,
+      "beanId"      TEXT NOT NULL,
+      "roastedOn"   TIMESTAMP(3),
+      "purchasedOn" TIMESTAMP(3),
+      "openedOn"    TIMESTAMP(3),
+      "exhaustedOn" TIMESTAMP(3),
+      "weightG"     DOUBLE PRECISION,
+      "notes"       TEXT,
+      "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "BeanBag_pkey" PRIMARY KEY ("id"),
+      CONSTRAINT "BeanBag_beanId_fkey" FOREIGN KEY ("beanId")
+        REFERENCES "Bean"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    )
+  `);
+  console.log("✓ BeanBag table");
+
+  await client.query(`ALTER TABLE "Brew" ADD COLUMN IF NOT EXISTS "beanBagId" TEXT`);
+  await client.query(`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'Brew_beanBagId_fkey' AND table_name = 'Brew'
+      ) THEN
+        ALTER TABLE "Brew" ADD CONSTRAINT "Brew_beanBagId_fkey"
+          FOREIGN KEY ("beanBagId") REFERENCES "BeanBag"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+      END IF;
+    END $$
+  `);
+  await client.query(`ALTER TABLE "Brew" ADD COLUMN IF NOT EXISTS "bagBrewIndex" INTEGER`);
+  console.log("✓ Brew bag columns");
+
+  await client.query(`
     DO $$ BEGIN
       IF EXISTS (
         SELECT 1 FROM information_schema.columns

@@ -8,6 +8,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       where: { id },
       include: {
         bean: { include: { producer: true } },
+        beanBag: true,
         waterProfile: true,
         filterProfile: true,
         grindProfile: true,
@@ -43,6 +44,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       data,
       include: {
         bean: { include: { producer: true } },
+        beanBag: true,
         waterProfile: true,
         filterProfile: true,
         grindProfile: true,

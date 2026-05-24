@@ -11,8 +11,9 @@ type FilterProfile = { id: string; name: string };
 type Bean = { id: string; producer: { name: string }; name: string; roastLevel: string; region?: string | null; process?: string | null };
 type GrindProfile = { id: string; name: string; setting: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number; bloomTimeS: number; bloomWaterG: number; pours: Pour[] };
-type SourceBrew = { brewedAt: string; roastedOn?: string | null; openedOn?: string | null; bean: Bean; waterProfile?: WaterProfile | null; filterProfile?: FilterProfile | null; grindProfile: GrindProfile; aidenProfile: AidenProfile };
+type SourceBrew = { brewedAt: string; roastedOn?: string | null; openedOn?: string | null; beanBagId?: string | null; bean: Bean; waterProfile?: WaterProfile | null; filterProfile?: FilterProfile | null; grindProfile: GrindProfile; aidenProfile: AidenProfile };
 type Producer = { id: string; name: string };
+type BeanBag = { id: string; beanId: string; roastedOn?: string | null; openedOn?: string | null; exhaustedOn?: string | null; weightG?: number | null; notes?: string | null };
 
 function NewBrewPageContent() {
   const router = useRouter();
@@ -36,6 +37,16 @@ function NewBrewPageContent() {
   const [roastedOn, setRoastedOn] = useState("");
   const [openedOn, setOpenedOn] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Bag selection
+  const [bags, setBags] = useState<BeanBag[]>([]);
+  const [selectedBag, setSelectedBag] = useState<BeanBag | null>(null);
+  const [showNewBagForm, setShowNewBagForm] = useState(false);
+  const [newBagRoastedOn, setNewBagRoastedOn] = useState("");
+  const [newBagOpenedOn, setNewBagOpenedOn] = useState("");
+  const [newBagWeightG, setNewBagWeightG] = useState("");
+  const [newBagNotes, setNewBagNotes] = useState("");
+  const [savingBag, setSavingBag] = useState(false);
 
   // Quick-add bean form
   const [producers, setProducers] = useState<Producer[]>([]);
@@ -89,8 +100,36 @@ function NewBrewPageContent() {
     });
   }, [fromId]);
 
+  // Load bags when a bean is selected
   useEffect(() => {
-    if (!selectedBean || fromId) return;
+    if (!selectedBean) { setBags([]); setSelectedBag(null); return; }
+    fetch(`/api/bean-bags?beanId=${selectedBean.id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const list: BeanBag[] = Array.isArray(data) ? data : [];
+        setBags(list);
+        // Auto-select the most recent non-exhausted bag from the source brew, or the first active one
+        if (fromId && sourceBrew?.beanBagId) {
+          const match = list.find((b) => b.id === sourceBrew.beanBagId);
+          if (match) { setSelectedBag(match); return; }
+        }
+        const active = list.find((b) => !b.exhaustedOn);
+        if (active) setSelectedBag(active);
+      })
+      .catch(() => setBags([]));
+  }, [selectedBean?.id]);
+
+  // Update freshness dates when bag changes
+  useEffect(() => {
+    if (selectedBag) {
+      setRoastedOn(selectedBag.roastedOn ? selectedBag.roastedOn.split("T")[0] : "");
+      setOpenedOn(selectedBag.openedOn ? selectedBag.openedOn.split("T")[0] : "");
+    }
+  }, [selectedBag?.id]);
+
+  // Fall back to last brew dates when no bag and not branching
+  useEffect(() => {
+    if (!selectedBean || fromId || selectedBag) return;
     fetch(`/api/brews?beanId=${selectedBean.id}&limit=1`)
       .then((r) => r.json())
       .then((brews) => {
@@ -99,7 +138,35 @@ function NewBrewPageContent() {
           if (brews[0].openedOn) setOpenedOn(brews[0].openedOn.split("T")[0]);
         }
       });
-  }, [selectedBean, fromId]);
+  }, [selectedBean?.id, fromId]);
+
+  async function createAndSelectBag() {
+    if (!selectedBean) return;
+    setSavingBag(true);
+    try {
+      const res = await fetch("/api/bean-bags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          beanId: selectedBean.id,
+          roastedOn: newBagRoastedOn || undefined,
+          openedOn: newBagOpenedOn || undefined,
+          weightG: newBagWeightG ? parseFloat(newBagWeightG) : undefined,
+          notes: newBagNotes || undefined,
+        }),
+      });
+      const bag = await res.json();
+      if (!res.ok) throw new Error(bag.error ?? `HTTP ${res.status}`);
+      setBags((prev) => [bag, ...prev]);
+      setSelectedBag(bag);
+      setShowNewBagForm(false);
+      setNewBagRoastedOn(""); setNewBagOpenedOn(""); setNewBagWeightG(""); setNewBagNotes("");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to create bag");
+    } finally {
+      setSavingBag(false);
+    }
+  }
 
   async function submit() {
     setSubmitting(true);
@@ -108,14 +175,15 @@ function NewBrewPageContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          beanId: selectedBag ? undefined : selectedBean!.id,
+          beanBagId: selectedBag?.id,
           waterProfileId: selectedWater?.id,
           filterProfileId: selectedFilter?.id,
-          beanId: selectedBean!.id,
           grindProfileId: selectedGrind!.id,
           aidenProfileId: selectedAiden!.id,
           actualCoffeeG: actualCoffeeG !== "" ? parseFloat(actualCoffeeG) : undefined,
-          roastedOn: roastedOn || undefined,
-          openedOn: openedOn || undefined,
+          roastedOn: !selectedBag && roastedOn ? roastedOn : undefined,
+          openedOn: !selectedBag && openedOn ? openedOn : undefined,
         }),
       });
       const brew = await res.json();
@@ -276,7 +344,6 @@ function NewBrewPageContent() {
             <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
               <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">Quick add bean</p>
 
-              {/* Producer */}
               <div>
                 <label className="text-stone-500 text-xs block mb-1">Producer</label>
                 <select value={newProducerId} onChange={(e) => { setNewProducerId(e.target.value); setNewProducerName(""); }}
@@ -291,7 +358,6 @@ function NewBrewPageContent() {
                 )}
               </div>
 
-              {/* Bean name */}
               <div>
                 <label className="text-stone-500 text-xs block mb-1">Name / blend</label>
                 <input type="text" placeholder="e.g. Yirgacheffe Natural" value={newBeanName}
@@ -299,7 +365,6 @@ function NewBrewPageContent() {
                   className="input-field" />
               </div>
 
-              {/* Roast level */}
               <div>
                 <label className="text-stone-500 text-xs block mb-1">Roast level</label>
                 <select value={newRoastLevel} onChange={(e) => setNewRoastLevel(e.target.value)} className="input-field">
@@ -307,7 +372,6 @@ function NewBrewPageContent() {
                 </select>
               </div>
 
-              {/* Region (optional) */}
               <div>
                 <label className="text-stone-500 text-xs block mb-1">Region <span className="text-stone-700">(optional)</span></label>
                 <input type="text" placeholder="e.g. Yirgacheffe" value={newRegion}
@@ -315,7 +379,6 @@ function NewBrewPageContent() {
                   className="input-field" />
               </div>
 
-              {/* Process (optional) */}
               <div>
                 <label className="text-stone-500 text-xs block mb-1">Process <span className="text-stone-700">(optional)</span></label>
                 <select value={newProcess} onChange={(e) => setNewProcess(e.target.value)} className="input-field">
@@ -339,7 +402,7 @@ function NewBrewPageContent() {
           ) : (
             <div className="space-y-2">
               {beans.map((bean) => (
-                <button key={bean.id} onClick={() => { setSelectedBean(bean); setStep(4); }}
+                <button key={bean.id} onClick={() => { setSelectedBean(bean); setSelectedBag(null); }}
                   className={`w-full text-left rounded-xl p-4 border transition-colors ${
                     selectedBean?.id === bean.id ? "border-amber-500 bg-stone-900" : "bg-stone-900 border-stone-800 hover:border-amber-600"
                   }`}>
@@ -350,6 +413,106 @@ function NewBrewPageContent() {
               ))}
             </div>
           )}
+
+          {/* Bag picker — shown after a bean is selected */}
+          {selectedBean && !showAddBean && (
+            <div className="mt-5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-stone-400 text-sm font-medium">Which bag?</p>
+                <button
+                  onClick={() => { setShowNewBagForm((v) => !v); setSelectedBag(null); }}
+                  className="text-amber-500 hover:text-amber-400 text-xs font-medium"
+                >
+                  {showNewBagForm ? "Cancel" : "+ New bag"}
+                </button>
+              </div>
+
+              {showNewBagForm && (
+                <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-3 space-y-3">
+                  <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">New bag</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-stone-500 text-xs block mb-1">Roasted on</label>
+                      <input type="date" value={newBagRoastedOn} onChange={(e) => setNewBagRoastedOn(e.target.value)} className="input-field" />
+                    </div>
+                    <div>
+                      <label className="text-stone-500 text-xs block mb-1">Opened</label>
+                      <input type="date" value={newBagOpenedOn} onChange={(e) => setNewBagOpenedOn(e.target.value)} className="input-field" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-stone-500 text-xs block mb-1">Bag size <span className="text-stone-700">(g, optional)</span></label>
+                      <input type="number" min="0" step="1" value={newBagWeightG} onChange={(e) => setNewBagWeightG(e.target.value)} placeholder="e.g. 250" className="input-field" />
+                    </div>
+                    <div>
+                      <label className="text-stone-500 text-xs block mb-1">Notes <span className="text-stone-700">(optional)</span></label>
+                      <input type="text" value={newBagNotes} onChange={(e) => setNewBagNotes(e.target.value)} className="input-field" />
+                    </div>
+                  </div>
+                  <button onClick={createAndSelectBag} disabled={savingBag}
+                    className="w-full py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm">
+                    {savingBag ? "Saving…" : "Create bag & select →"}
+                  </button>
+                </div>
+              )}
+
+              {!showNewBagForm && bags.length > 0 && (
+                <div className="space-y-2 mb-2">
+                  {bags.map((bag) => {
+                    const isActive = !bag.exhaustedOn;
+                    return (
+                      <button key={bag.id} onClick={() => setSelectedBag(selectedBag?.id === bag.id ? null : bag)}
+                        className={`w-full text-left rounded-xl p-3 border transition-colors ${
+                          selectedBag?.id === bag.id
+                            ? "border-amber-500 bg-stone-900"
+                            : isActive
+                            ? "bg-stone-900 border-stone-700 hover:border-amber-600"
+                            : "bg-stone-900/50 border-stone-800 opacity-60"
+                        }`}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            {bag.roastedOn && (
+                              <p className="text-stone-300 text-sm">Roasted {format(new Date(bag.roastedOn), "MMM d, yyyy")}</p>
+                            )}
+                            {bag.openedOn && (
+                              <p className="text-stone-500 text-xs">Opened {format(new Date(bag.openedOn), "MMM d, yyyy")}</p>
+                            )}
+                            {!bag.roastedOn && !bag.openedOn && (
+                              <p className="text-stone-500 text-xs">Bag (no dates recorded)</p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            {isActive
+                              ? <span className="text-green-500 text-xs">Active</span>
+                              : <span className="text-stone-600 text-xs">Exhausted</span>
+                            }
+                            {selectedBag?.id === bag.id && <p className="text-amber-500 text-xs">Selected ✓</p>}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {!showNewBagForm && bags.length === 0 && (
+                <p className="text-stone-600 text-xs mb-2">No bags on record for this bean — create one above, or skip.</p>
+              )}
+
+              <button
+                onClick={() => setSelectedBag(null)}
+                className={`w-full py-2 text-xs rounded-xl border transition-colors ${
+                  !selectedBag
+                    ? "border-stone-600 bg-stone-800 text-stone-300"
+                    : "border-stone-800 bg-stone-900 text-stone-600 hover:text-stone-400"
+                }`}
+              >
+                No bag / skip
+              </button>
+            </div>
+          )}
+
           {selectedBean && !showAddBean && (
             <button onClick={() => setStep(4)} className="w-full mt-4 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">Next →</button>
           )}
@@ -456,25 +619,59 @@ function NewBrewPageContent() {
             {selectedWater && <p className="text-stone-300"><span className="text-stone-500">Water:</span> {selectedWater.brand}{selectedWater.additives ? ` · ${selectedWater.additives}` : ""}</p>}
             {selectedFilter && <p className="text-stone-300"><span className="text-stone-500">Filter:</span> {selectedFilter.name}</p>}
             <p className="text-stone-300"><span className="text-stone-500">Beans:</span> {selectedBean?.producer?.name} — {selectedBean?.name}</p>
+            {selectedBag && (
+              <p className="text-stone-300">
+                <span className="text-stone-500">Bag:</span>{" "}
+                {selectedBag.roastedOn ? `Roasted ${format(new Date(selectedBag.roastedOn), "MMM d")}` : "no roast date"}
+                {selectedBag.openedOn ? ` · opened ${format(new Date(selectedBag.openedOn), "MMM d")}` : ""}
+              </p>
+            )}
             <p className="text-stone-300"><span className="text-stone-500">Grind:</span> {selectedGrind?.setting} (Ode Gen 2)</p>
             {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}
           </div>
-          <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
-            <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Bean Freshness <span className="text-stone-600 normal-case font-normal">(optional)</span></p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Roasted on</label>
-                <input type="date" value={roastedOn} onChange={(e) => setRoastedOn(e.target.value)} className="input-field" />
+
+          {/* Freshness — editable only when no bag is selected */}
+          {selectedBag ? (
+            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
+              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2">Bean Freshness</p>
+              <p className="text-stone-600 text-xs mb-2">Dates sourced from bag record.</p>
+              <div className="grid grid-cols-2 gap-3">
+                {selectedBag.roastedOn && (
+                  <div>
+                    <p className="text-stone-500 text-xs mb-0.5">Roasted on</p>
+                    <p className="text-stone-300 text-sm">{format(new Date(selectedBag.roastedOn), "MMM d, yyyy")}</p>
+                  </div>
+                )}
+                {selectedBag.openedOn && (
+                  <div>
+                    <p className="text-stone-500 text-xs mb-0.5">Bag opened</p>
+                    <p className="text-stone-300 text-sm">{format(new Date(selectedBag.openedOn), "MMM d, yyyy")}</p>
+                  </div>
+                )}
               </div>
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Bag opened</label>
-                <input type="date" value={openedOn} onChange={(e) => setOpenedOn(e.target.value)} className="input-field" />
-              </div>
+              {selectedBag.roastedOn && (
+                <p className="text-stone-600 text-xs mt-2">{Math.round((Date.now() - new Date(selectedBag.roastedOn).getTime()) / 86400000)} days since roast</p>
+              )}
             </div>
-            {roastedOn && (
-              <p className="text-stone-600 text-xs mt-2">{Math.round((Date.now() - new Date(roastedOn).getTime()) / 86400000)} days since roast</p>
-            )}
-          </div>
+          ) : (
+            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
+              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Bean Freshness <span className="text-stone-600 normal-case font-normal">(optional)</span></p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-stone-500 text-xs block mb-1">Roasted on</label>
+                  <input type="date" value={roastedOn} onChange={(e) => setRoastedOn(e.target.value)} className="input-field" />
+                </div>
+                <div>
+                  <label className="text-stone-500 text-xs block mb-1">Bag opened</label>
+                  <input type="date" value={openedOn} onChange={(e) => setOpenedOn(e.target.value)} className="input-field" />
+                </div>
+              </div>
+              {roastedOn && (
+                <p className="text-stone-600 text-xs mt-2">{Math.round((Date.now() - new Date(roastedOn).getTime()) / 86400000)} days since roast</p>
+              )}
+            </div>
+          )}
+
           <button disabled={!selectedAiden || submitting} onClick={submit}
             className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors">
             {submitting ? "Logging..." : fromId ? "Branch →" : "Start Brew →"}

@@ -18,8 +18,8 @@ model Producer {
 }
 
 model Bean {
-  id           String   @id @default(cuid())
-  producer     Producer @relation(fields: [producerId], references: [id])
+  id           String    @id @default(cuid())
+  producer     Producer  @relation(fields: [producerId], references: [id])
   producerId   String
   name         String
   region       String?
@@ -29,8 +29,23 @@ model Bean {
   imageUrl     String?
   productUrl   String?
   notes        String?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
   brews        Brew[]
+  bags         BeanBag[]
+}
+
+model BeanBag {
+  id          String    @id @default(cuid())
+  bean        Bean      @relation(fields: [beanId], references: [id])
+  beanId      String
+  roastedOn   DateTime?
+  purchasedOn DateTime?
+  openedOn    DateTime?
+  exhaustedOn DateTime?
+  weightG     Float?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  brews       Brew[]
 }
 
 model WaterProfile {
@@ -85,6 +100,9 @@ model Brew {
   openedOn        DateTime?
   bean            Bean           @relation(fields: [beanId], references: [id])
   beanId          String
+  beanBag         BeanBag?       @relation(fields: [beanBagId], references: [id])
+  beanBagId       String?
+  bagBrewIndex    Int?
   waterProfile    WaterProfile?  @relation(fields: [waterProfileId], references: [id])
   waterProfileId  String?
   filterProfile   FilterProfile? @relation(fields: [filterProfileId], references: [id])

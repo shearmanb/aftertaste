@@ -22,7 +22,6 @@ type Brew = {
 export default function BrewsPage() {
   const [brews, setBrews] = useState<Brew[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/brews").then((r) => r.ok ? r.json() : []).then((data) => { setBrews(data); setLoading(false); }).catch(() => setLoading(false));
@@ -30,14 +29,13 @@ export default function BrewsPage() {
 
   async function deleteBrew(id: string) {
     if (!confirm("Delete this brew? This cannot be undone.")) return;
-    setDeletingId(id);
+    const snapshot = brews;
+    setBrews((prev) => prev.filter((b) => b.id !== id));
     const res = await fetch(`/api/brews/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      setBrews((prev) => prev.filter((b) => b.id !== id));
-    } else {
+    if (!res.ok) {
+      setBrews(snapshot);
       alert("Failed to delete brew. Please try again.");
     }
-    setDeletingId(null);
   }
 
   return (
@@ -110,10 +108,9 @@ export default function BrewsPage() {
                     <Link href={`/brew/${brew.id}/edit`} className="text-stone-600 hover:text-stone-400 text-xs">Edit</Link>
                     <button
                       onClick={() => deleteBrew(brew.id)}
-                      disabled={deletingId === brew.id}
                       className="text-stone-600 hover:text-red-400 text-xs transition-colors"
                     >
-                      {deletingId === brew.id ? "..." : "Delete"}
+                      Delete
                     </button>
                   </div>
                 </div>

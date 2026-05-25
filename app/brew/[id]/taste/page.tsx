@@ -10,8 +10,11 @@ const COMMON_TAGS_FALLBACK = [
   "roasty", "smoky", "earthy", "floral", "bright", "clean", "complex",
 ];
 
+const LOCKED_MISC_VARS = ["used lid"];
+
 type BrewData = {
   brewIssues: string[];
+  miscVars: string[];
   bean: { tastingNotes: string[] };
   tastingNote?: {
     overallScore: number; fruit: number; strength: number; chocolate: number; sourness: number;
@@ -28,7 +31,9 @@ export default function TastePage() {
   const [commonTags, setCommonTags] = useState<string[]>(COMMON_TAGS_FALLBACK);
   const [bagNotes, setBagNotes] = useState<string[]>([]);
   const [issueOptions, setIssueOptions] = useState<string[]>([]);
+  const [miscVarOptions, setMiscVarOptions] = useState<string[]>([]);
   const [brewIssues, setBrewIssues] = useState<string[]>([]);
+  const [miscVars, setMiscVars] = useState<string[]>([]);
   const [overallScore, setOverallScore] = useState(7);
   const [fruit, setFruit] = useState(2.5);
   const [strength, setStrength] = useState(0); // signed position: -10=too weak, 0=perfect, +10=too strong
@@ -58,6 +63,11 @@ export default function TastePage() {
       .then((data) => {
         if (Array.isArray(data)) setIssueOptions(data.map((o: { value: string }) => o.value));
       });
+    fetch("/api/options?category=miscVar")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setMiscVarOptions(data.map((o: { value: string }) => o.value));
+      });
   }, []);
 
   useEffect(() => {
@@ -65,6 +75,7 @@ export default function TastePage() {
       const notes = data.bean?.tastingNotes ?? [];
       setBagNotes(notes);
       if (Array.isArray(data.brewIssues)) setBrewIssues(data.brewIssues);
+      if (Array.isArray(data.miscVars)) setMiscVars(data.miscVars);
 
       if (data.tastingNote) {
         const tn = data.tastingNote;
@@ -142,7 +153,7 @@ export default function TastePage() {
       fetch(`/api/brews/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brewIssues }),
+        body: JSON.stringify({ brewIssues, miscVars }),
       }),
     ]);
     router.push(`/brew/${id}`);
@@ -268,6 +279,30 @@ export default function TastePage() {
               )}
             </div>
           )}
+        </div>
+
+        {/* Misc Variables */}
+        <div className="bg-stone-900 border border-stone-800 rounded-xl p-5">
+          <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Misc Variables <span className="text-stone-600 normal-case font-normal">(optional)</span></p>
+          <div className="flex flex-wrap gap-1.5">
+            {[...LOCKED_MISC_VARS, ...miscVarOptions].map((v) => {
+              const active = miscVars.includes(v);
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setMiscVars((prev) => active ? prev.filter((x) => x !== v) : [...prev, v])}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    active
+                      ? "bg-amber-600 border-amber-500 text-white"
+                      : "bg-stone-800 border-stone-700 text-stone-400 hover:border-amber-700 hover:text-stone-300"
+                  }`}
+                >
+                  {v}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Brew Issues */}

@@ -100,6 +100,16 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
               </>
             );
           })()}
+          {(brew as any).miscVars?.length > 0 && (
+            <div className="pt-1">
+              <p className="text-stone-500 text-xs mb-1.5">Misc</p>
+              <div className="flex flex-wrap gap-1">
+                {((brew as any).miscVars as string[]).map((v) => (
+                  <span key={v} className="bg-amber-900/30 text-amber-400 text-xs px-2 py-0.5 rounded-full border border-amber-800/30">{v}</span>
+                ))}
+              </div>
+            </div>
+          )}
           {(brew as any).brewIssues?.length > 0 && (
             <div className="pt-1">
               <p className="text-stone-500 text-xs mb-1.5">Issues</p>

@@ -26,7 +26,6 @@ export default function OutsideCupDetailPage() {
   const [methods, setMethods] = useState<string[]>([]);
   const [beans, setBeans] = useState<Bean[]>([]);
   const [deleting, setDeleting] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   // Edit state
   const [location, setLocation] = useState("");
@@ -59,26 +58,32 @@ export default function OutsideCupDetailPage() {
   }, [id]);
 
   async function save() {
-    setSaving(true);
+    if (!location.trim() || !method) return;
+    const data = {
+      location: location.trim(),
+      locationNote: locationNote.trim() || null,
+      method,
+      beanId: beanId || null,
+      overallScore,
+      notes: notes.trim() || null,
+      visitedAt: new Date(visitedAt).toISOString(),
+    };
+    const previous = cup;
+    const optimisticBean = beanId ? (beans.find((b) => b.id === beanId) ?? null) : null;
+    setCup({ ...cup!, ...data, bean: optimisticBean });
+    setEditing(false);
     try {
       const res = await fetch(`/api/outside-cups/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          location: location.trim(),
-          locationNote: locationNote.trim() || null,
-          method,
-          beanId: beanId || null,
-          overallScore,
-          notes: notes.trim() || null,
-          visitedAt: new Date(visitedAt).toISOString(),
-        }),
+        body: JSON.stringify(data),
       });
-      const updated = await res.json();
-      setCup(updated);
-      setEditing(false);
-    } finally {
-      setSaving(false);
+      if (!res.ok) throw new Error("Save failed");
+      setCup(await res.json());
+    } catch {
+      setCup(previous);
+      setEditing(true);
+      alert("Save failed. Please try again.");
     }
   }
 
@@ -175,9 +180,9 @@ export default function OutsideCupDetailPage() {
             </div>
           </div>
 
-          <button onClick={save} disabled={saving || !location.trim() || !method}
+          <button onClick={save} disabled={!location.trim() || !method}
             className="w-full py-4 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold rounded-xl transition-colors">
-            {saving ? "Saving..." : "Save changes"}
+            Save changes
           </button>
         </div>
       </div>

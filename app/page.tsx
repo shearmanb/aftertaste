@@ -112,7 +112,8 @@ export default async function DashboardPage() {
             { href: "/profiles/filter", label: "Filters", icon: "▽" },
             { href: "/profiles/grind", label: "Grind Profiles", icon: "⚙" },
             { href: "/profiles/aiden", label: "Aiden Profiles", icon: "⊕" },
-            { href: "/admin", label: "Control Panel", icon: "⚒" },
+            { href: "/stats", label: "Statistics", icon: "▲" },
+          { href: "/admin", label: "Control Panel", icon: "⚒" },
           ].map((item) => (
             <Link
               key={item.href}

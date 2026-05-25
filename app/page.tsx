@@ -75,7 +75,6 @@ export default async function DashboardPage() {
                       {brew.bean.producer.name} — {brew.bean.name}
                     </p>
                     <p className="text-stone-500 text-sm mt-0.5">
-                      Grind {brew.grindProfile.setting}{" · "}
                       {formatDistanceToNow(new Date(brew.brewedAt), { addSuffix: true })}
                     </p>
                   </div>
@@ -113,6 +112,7 @@ export default async function DashboardPage() {
             { href: "/profiles/grind", label: "Grind Profiles", icon: "⚙" },
             { href: "/profiles/aiden", label: "Aiden Profiles", icon: "⊕" },
             { href: "/stats", label: "Statistics", icon: "▲" },
+            { href: "/compare", label: "Compare", icon: "⇌" },
             { href: "/admin", label: "Control Panel", icon: "⚒" },
           ].map((item) => (
             <Link

@@ -48,6 +48,10 @@ function NewBrewPageContent() {
   const [newBagNotes, setNewBagNotes] = useState("");
   const [savingBag, setSavingBag] = useState(false);
 
+  // Misc variables
+  const [miscVarOptions, setMiscVarOptions] = useState<string[]>([]);
+  const [selectedMiscVars, setSelectedMiscVars] = useState<string[]>([]);
+
   // Quick-add bean form
   const [producers, setProducers] = useState<Producer[]>([]);
   const [roastLevels, setRoastLevels] = useState<string[]>([]);
@@ -71,12 +75,13 @@ function NewBrewPageContent() {
       fetch("/api/producers").then((r) => r.json()),
       fetch("/api/options?category=roastLevel").then((r) => r.ok ? r.json() : []),
       fetch("/api/options?category=process").then((r) => r.ok ? r.json() : []),
+      fetch("/api/options?category=miscVar").then((r) => r.ok ? r.json() : []),
     ];
     const sourcePromise = fromId
       ? fetch(`/api/brews/${fromId}`).then((r) => r.json())
       : Promise.resolve(null);
 
-    Promise.all([...fetches, sourcePromise]).then(([water, filter, beansData, grind, aiden, producersData, roastData, processData, source]) => {
+    Promise.all([...fetches, sourcePromise]).then(([water, filter, beansData, grind, aiden, producersData, roastData, processData, miscVarData, source]) => {
       setWaterProfiles(Array.isArray(water) ? water : []);
       setFilterProfiles(Array.isArray(filter) ? filter : []);
       setBeans(Array.isArray(beansData) ? beansData : []);
@@ -87,6 +92,7 @@ function NewBrewPageContent() {
       setRoastLevels(rl);
       setNewRoastLevel(rl[0] ?? "");
       setProcesses(Array.isArray(processData) ? processData.map((o: { value: string }) => o.value) : []);
+      setMiscVarOptions(Array.isArray(miscVarData) ? miscVarData.map((o: { value: string }) => o.value) : []);
       if (source) {
         setSourceBrew(source);
         if (source.waterProfile) setSelectedWater(source.waterProfile);
@@ -184,6 +190,7 @@ function NewBrewPageContent() {
           actualCoffeeG: actualCoffeeG !== "" ? parseFloat(actualCoffeeG) : undefined,
           roastedOn: !selectedBag && roastedOn ? roastedOn : undefined,
           openedOn: !selectedBag && openedOn ? openedOn : undefined,
+          miscVars: selectedMiscVars,
         }),
       });
       const brew = await res.json();
@@ -669,6 +676,36 @@ function NewBrewPageContent() {
               {roastedOn && (
                 <p className="text-stone-600 text-xs mt-2">{Math.round((Date.now() - new Date(roastedOn).getTime()) / 86400000)} days since roast</p>
               )}
+            </div>
+          )}
+
+          {/* Misc variables */}
+          {(miscVarOptions.length > 0 || true) && (
+            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
+              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Misc Variables <span className="text-stone-600 normal-case font-normal">(optional)</span></p>
+              <div className="flex flex-wrap gap-2">
+                {["used lid", ...miscVarOptions].map((v) => {
+                  const active = selectedMiscVars.includes(v);
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() =>
+                        setSelectedMiscVars((prev) =>
+                          active ? prev.filter((x) => x !== v) : [...prev, v]
+                        )
+                      }
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        active
+                          ? "bg-amber-600 border-amber-500 text-white"
+                          : "bg-stone-800 border-stone-700 text-stone-400 hover:border-amber-700 hover:text-stone-300"
+                      }`}
+                    >
+                      {v}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 

@@ -114,6 +114,7 @@ model Brew {
   aidenProfileId  String
   actualCoffeeG   Float?
   brewIssues      String[]
+  miscVars        String[]
   tastingNote     TastingNote?
 }
 

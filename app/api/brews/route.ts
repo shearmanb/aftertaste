@@ -46,6 +46,7 @@ export async function POST(req: Request) {
       roastedOn,
       openedOn,
       brewIssues,
+      miscVars,
       actualCoffeeG,
     } = await req.json();
 
@@ -74,6 +75,7 @@ export async function POST(req: Request) {
         roastedOn: roastedOn ? new Date(roastedOn) : undefined,
         openedOn: openedOn ? new Date(openedOn) : undefined,
         brewIssues: brewIssues ?? [],
+        miscVars: miscVars ?? [],
         actualCoffeeG: typeof actualCoffeeG === "number" ? actualCoffeeG : undefined,
       },
       include: BREW_INCLUDE,

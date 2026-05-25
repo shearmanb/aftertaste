@@ -30,9 +30,9 @@ export default function TastePage() {
   const [issueOptions, setIssueOptions] = useState<string[]>([]);
   const [brewIssues, setBrewIssues] = useState<string[]>([]);
   const [overallScore, setOverallScore] = useState(7);
-  const [fruit, setFruit] = useState(3);
+  const [fruit, setFruit] = useState(2.5);
   const [strength, setStrength] = useState(0); // signed position: -10=too weak, 0=perfect, +10=too strong
-  const [chocolate, setChocolate] = useState(2);
+  const [chocolate, setChocolate] = useState(2.5);
   const [sourness, setSourness] = useState(1);
   // 0 = unrated, 1 = tasted ✓, 2 = missed ✗
   const [bagTagStates, setBagTagStates] = useState<Record<string, 0 | 1 | 2>>({});
@@ -178,8 +178,8 @@ export default function TastePage() {
         {/* Flavor dimensions */}
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-5 space-y-5">
           <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">Flavor Dimensions</p>
-          <TastingSlider label="Fruit" value={fruit} onChange={setFruit} lowLabel="None" highLabel="Tons" />
-          <TastingSlider label="Chocolate / Roastness" value={chocolate} onChange={setChocolate} lowLabel="None" highLabel="Rich" />
+          <TastingSlider label="Fruit" value={fruit} min={0} onChange={setFruit} lowLabel="None" highLabel="Tons" />
+          <TastingSlider label="Chocolate / Roastness" value={chocolate} min={0} onChange={setChocolate} lowLabel="None" highLabel="Rich" />
           <TastingSlider label="Strength" value={strength} onChange={setStrength} symmetric />
           <TastingSlider label="Sourness / Off-flavors" value={sourness} onChange={setSourness} lowLabel="None" highLabel="Sharp" />
         </div>

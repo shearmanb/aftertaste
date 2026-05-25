@@ -3,6 +3,7 @@
 interface Props {
   label: string;
   value: number;
+  min?: number;
   max?: number;
   step?: number;
   onChange: (v: number) => void;
@@ -12,7 +13,7 @@ interface Props {
   symmetric?: boolean;
 }
 
-export default function TastingSlider({ label, value, max = 5, step = 0.25, onChange, lowLabel, highLabel, midLabel, symmetric }: Props) {
+export default function TastingSlider({ label, value, min = 1, max = 5, step = 0.25, onChange, lowLabel, highLabel, midLabel, symmetric }: Props) {
   if (symmetric) {
     // value is a signed position: -10 (too weak) to +10 (too strong), 0 = perfect
     // score = 5 - abs(position) * 0.5  →  0.5 increments from 5 down to 0 at ±10
@@ -51,7 +52,7 @@ export default function TastingSlider({ label, value, max = 5, step = 0.25, onCh
       </div>
       <input
         type="range"
-        min={1}
+        min={min}
         max={max}
         step={step}
         value={value}

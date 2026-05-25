@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { OutsideCupPatchSchema } from "@/lib/schemas";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -20,9 +21,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   try {
     const { id } = await params;
     const body = await req.json();
+    const parsed = OutsideCupPatchSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+    }
+    const { visitedAt, beanId, ...rest } = parsed.data;
     const cup = await prisma.outsideCup.update({
       where: { id },
-      data: body,
+      data: {
+        ...rest,
+        ...(visitedAt !== undefined ? { visitedAt: new Date(visitedAt) } : {}),
+        ...(beanId !== undefined ? { beanId: beanId ?? null } : {}),
+      },
       include: { bean: { include: { producer: true } } },
     });
     return NextResponse.json(cup);

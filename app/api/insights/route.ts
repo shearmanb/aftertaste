@@ -3,19 +3,26 @@ import { prisma } from "@/lib/prisma";
 import { generateInsights } from "@/lib/claude";
 
 export async function POST() {
-  const brews = await prisma.brew.findMany({
-    take: 60,
-    orderBy: { brewedAt: "desc" },
-    include: {
-      bean: { include: { producer: true } },
-      waterProfile: true,
-      grindProfile: true,
-      aidenProfile: true,
-      tastingNote: true,
-    },
-  });
+  const [brews, outsideCups] = await Promise.all([
+    prisma.brew.findMany({
+      take: 60,
+      orderBy: { brewedAt: "desc" },
+      include: {
+        bean: { include: { producer: true } },
+        waterProfile: true,
+        grindProfile: true,
+        aidenProfile: true,
+        tastingNote: true,
+      },
+    }),
+    prisma.outsideCup.findMany({
+      take: 30,
+      orderBy: { visitedAt: "desc" },
+      include: { bean: { include: { producer: true } } },
+    }),
+  ]);
 
-  if (brews.length === 0) {
+  if (brews.length === 0 && outsideCups.length === 0) {
     return NextResponse.json({ insights: "No brews logged yet. Start brewing!" });
   }
 
@@ -32,7 +39,7 @@ export async function POST() {
         ? {
             overall: b.tastingNote.overallScore,
             fruit: b.tastingNote.fruit,
-            bitterness: b.tastingNote.bitterness,
+            strength: b.tastingNote.strength,
             chocolate: b.tastingNote.chocolate,
             sourness: b.tastingNote.sourness,
             tags: b.tastingNote.flavorTags,
@@ -44,6 +51,21 @@ export async function POST() {
     2
   );
 
-  const insights = await generateInsights(brewData);
+  const outsideData = outsideCups.length > 0
+    ? JSON.stringify(
+        outsideCups.map((c) => ({
+          date: c.visitedAt,
+          location: c.location + (c.locationNote ? ` (${c.locationNote})` : ""),
+          method: c.method,
+          bean: c.bean ? `${c.bean.producer.name} - ${c.bean.name}` : "unknown",
+          score: c.overallScore,
+          notes: c.notes,
+        })),
+        null,
+        2
+      )
+    : null;
+
+  const insights = await generateInsights(brewData, outsideData ?? undefined);
   return NextResponse.json({ insights });
 }

@@ -18,8 +18,8 @@ model Producer {
 }
 
 model Bean {
-  id           String    @id @default(cuid())
-  producer     Producer  @relation(fields: [producerId], references: [id])
+  id           String       @id @default(cuid())
+  producer     Producer     @relation(fields: [producerId], references: [id])
   producerId   String
   name         String
   region       String?
@@ -29,9 +29,10 @@ model Bean {
   imageUrl     String?
   productUrl   String?
   notes        String?
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime     @default(now())
   brews        Brew[]
   bags         BeanBag[]
+  outsideCups  OutsideCup[]
 }
 
 model BeanBag {
@@ -72,16 +73,16 @@ model DropdownOption {
 }
 
 model GrindProfile {
-  id      String @id @default(cuid())
+  id      String  @id @default(cuid())
   name    String
-  grinder String @default("Fellow Ode Gen 2")
+  grinder String  @default("Fellow Ode Gen 2")
   setting Float
   notes   String?
   brews   Brew[]
 }
 
 model AidenProfile {
-  id          String @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   coffeeG     Float
   waterG      Float
@@ -122,7 +123,7 @@ model TastingNote {
   brewId          String   @unique
   overallScore    Float
   fruit           Float
-  bitterness      Float
+  strength        Float
   chocolate       Float
   sourness        Float
   drinkingTempF   Int?
@@ -136,4 +137,17 @@ model TastingNote {
   changesToMake   String?
   wouldBrewAgain  Boolean  @default(true)
   createdAt       DateTime @default(now())
+}
+
+model OutsideCup {
+  id           String    @id @default(cuid())
+  visitedAt    DateTime  @default(now())
+  location     String
+  locationNote String?
+  method       String
+  bean         Bean?     @relation(fields: [beanId], references: [id])
+  beanId       String?
+  overallScore Float?
+  notes        String?
+  createdAt    DateTime  @default(now())
 }

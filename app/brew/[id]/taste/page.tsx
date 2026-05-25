@@ -14,7 +14,7 @@ type BrewData = {
   brewIssues: string[];
   bean: { tastingNotes: string[] };
   tastingNote?: {
-    overallScore: number; fruit: number; bitterness: number; chocolate: number; sourness: number;
+    overallScore: number; fruit: number; strength: number; chocolate: number; sourness: number;
     confirmedTags: string[]; missedTags: string[]; bonusTags: string[]; flavorTags: string[];
     initialThoughts?: string | null; bestPart?: string | null;
     worstPart?: string | null; changesToMake?: string | null; wouldBrewAgain: boolean;
@@ -70,7 +70,8 @@ export default function TastePage() {
         const tn = data.tastingNote;
         setOverallScore(tn.overallScore);
         setFruit(tn.fruit);
-        setStrength(0); // reset to center; old bitterness scores don't map to a direction
+        // Integer = new format (-10..+10); non-integer = legacy derived score, can't recover direction
+        setStrength(Number.isInteger(tn.strength) ? tn.strength : 0);
         setChocolate(tn.chocolate);
         setSourness(tn.sourness);
         setInitialThoughts(tn.initialThoughts ?? "");
@@ -128,7 +129,7 @@ export default function TastePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          overallScore, fruit, bitterness: Math.max(0, 5 - Math.abs(strength) * 0.5), chocolate, sourness,
+          overallScore, fruit, strength, chocolate, sourness,
           confirmedTags, missedTags, bonusTags,
           flavorTags: [...confirmedTags, ...bonusTags],
           initialThoughts: initialThoughts || undefined,

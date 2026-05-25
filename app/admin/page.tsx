@@ -66,6 +66,15 @@ export default function AdminPage() {
         <p className="text-stone-500 text-xs mt-1">Manage dropdown options used across the app</p>
       </div>
 
+      <a
+        href="/api/export"
+        download
+        className="flex items-center gap-2 w-full bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-xl px-4 py-3 text-sm text-stone-300 font-medium transition-colors mb-5"
+      >
+        <span className="text-amber-500">↓</span>
+        Export all data (JSON)
+      </a>
+
       {loading ? (
         <p className="text-stone-500 text-sm text-center py-10">Loading...</p>
       ) : (

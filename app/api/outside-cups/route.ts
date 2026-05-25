@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { OutsideCupSchema } from "@/lib/schemas";
 
 export async function GET() {
   try {
@@ -17,8 +18,17 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const parsed = OutsideCupSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+    }
+    const { visitedAt, beanId, ...rest } = parsed.data;
     const cup = await prisma.outsideCup.create({
-      data: body,
+      data: {
+        ...rest,
+        ...(visitedAt ? { visitedAt: new Date(visitedAt) } : {}),
+        ...(beanId ? { beanId } : {}),
+      },
       include: { bean: { include: { producer: true } } },
     });
     return NextResponse.json(cup, { status: 201 });

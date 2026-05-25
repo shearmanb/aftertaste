@@ -128,7 +128,7 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
             <div className="grid grid-cols-2 gap-2 mb-4">
               <ScoreBar label="Fruit" value={brew.tastingNote.fruit} />
               <ScoreBar label="Chocolate" value={brew.tastingNote.chocolate} />
-              <ScoreBar label="Strength" value={brew.tastingNote.bitterness} />
+              <StrengthBar value={brew.tastingNote.strength} />
               <ScoreBar label="Sourness" value={brew.tastingNote.sourness} />
             </div>
             {(() => {
@@ -203,6 +203,29 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
       <div className="h-1.5 bg-stone-800 rounded-full overflow-hidden">
         <div className="h-full bg-amber-600 rounded-full" style={{ width: `${(value / 5) * 100}%` }} />
       </div>
+    </div>
+  );
+}
+
+function StrengthBar({ value }: { value: number }) {
+  // Integer values are the new -10..+10 format; non-integers are legacy 0-5 derived scores.
+  const isNew = Number.isInteger(value);
+  const score = isNew ? Math.max(0, 5 - Math.abs(value) * 0.5) : Math.min(value, 5);
+  const scoreLabel = score % 1 === 0 ? String(score) : score.toFixed(1);
+  return (
+    <div>
+      <div className="flex justify-between text-xs mb-1">
+        <span className="text-stone-500">Strength</span>
+        <span className="text-stone-300 font-medium">{scoreLabel}/5</span>
+      </div>
+      <div className="h-1.5 bg-stone-800 rounded-full overflow-hidden">
+        <div className="h-full bg-amber-600 rounded-full" style={{ width: `${(score / 5) * 100}%` }} />
+      </div>
+      {isNew && value !== 0 && (
+        <div className="text-xs text-stone-600 mt-0.5 text-right">
+          {value > 0 ? `too strong (+${value})` : `too weak (${value})`}
+        </div>
+      )}
     </div>
   );
 }

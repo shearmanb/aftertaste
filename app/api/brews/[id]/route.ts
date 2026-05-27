@@ -28,9 +28,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   try {
     const { id } = await params;
     const body = await req.json();
-    const { beanId, waterProfileId, filterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn, brewIssues, miscVars, actualCoffeeG } = body;
+    const { beanId, waterProfileId, filterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn, brewIssues, miscVars, actualCoffeeG, bagBrewIndex } = body;
     const data: Record<string, unknown> = {};
     if (beanId !== undefined) data.beanId = beanId;
+    if ("bagBrewIndex" in body) data.bagBrewIndex = typeof bagBrewIndex === "number" ? bagBrewIndex : null;
     if ("waterProfileId" in body) data.waterProfileId = waterProfileId || null;
     if ("filterProfileId" in body) data.filterProfileId = filterProfileId || null;
     if (grindProfileId !== undefined) data.grindProfileId = grindProfileId;

@@ -48,6 +48,7 @@ export async function POST(req: Request) {
       brewIssues,
       miscVars,
       actualCoffeeG,
+      bagBrewIndex: rawBagBrewIndex,
     } = await req.json();
 
     let beanId = rawBeanId;
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
       });
       if (!bag) return NextResponse.json({ error: "BeanBag not found" }, { status: 404 });
       beanId = bag.beanId;
-      bagBrewIndex = bag._count.brews + 1;
+      bagBrewIndex = typeof rawBagBrewIndex === "number" ? rawBagBrewIndex : bag._count.brews + 1;
     }
 
     const brew = await prisma.brew.create({

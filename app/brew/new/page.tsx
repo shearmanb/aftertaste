@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import OdeDial from "@/components/OdeDial";
 import { format } from "date-fns";
 
-type Pour = { sequence: number; waterG: number; pauseS: number };
+type Pour = { sequence: number; tempF: number; pauseS: number };
 type WaterProfile = { id: string; brand: string; additives?: string | null };
 type FilterProfile = { id: string; name: string };
 type Bean = { id: string; producer: { name: string }; name: string; roastLevel: string; region?: string | null; process?: string | null };
@@ -13,7 +13,7 @@ type GrindProfile = { id: string; name: string; setting: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number; bloomTimeS: number; bloomWaterG: number; pours: Pour[] };
 type SourceBrew = { brewedAt: string; roastedOn?: string | null; openedOn?: string | null; beanBagId?: string | null; bean: Bean; waterProfile?: WaterProfile | null; filterProfile?: FilterProfile | null; grindProfile: GrindProfile; aidenProfile: AidenProfile };
 type Producer = { id: string; name: string };
-type BeanBag = { id: string; beanId: string; roastedOn?: string | null; openedOn?: string | null; exhaustedOn?: string | null; weightG?: number | null; notes?: string | null };
+type BeanBag = { id: string; beanId: string; roastedOn?: string | null; openedOn?: string | null; exhaustedOn?: string | null; weightG?: number | null; notes?: string | null; brews?: { id: string }[] };
 
 function NewBrewPageContent() {
   const router = useRouter();
@@ -41,6 +41,7 @@ function NewBrewPageContent() {
   // Bag selection
   const [bags, setBags] = useState<BeanBag[]>([]);
   const [selectedBag, setSelectedBag] = useState<BeanBag | null>(null);
+  const [bagBrewIndex, setBagBrewIndex] = useState<string>("");
   const [showNewBagForm, setShowNewBagForm] = useState(false);
   const [newBagRoastedOn, setNewBagRoastedOn] = useState("");
   const [newBagOpenedOn, setNewBagOpenedOn] = useState("");
@@ -125,11 +126,12 @@ function NewBrewPageContent() {
       .catch(() => setBags([]));
   }, [selectedBean?.id]);
 
-  // Update freshness dates when bag changes
+  // Update freshness dates and default bag position when bag changes
   useEffect(() => {
     if (selectedBag) {
       setRoastedOn(selectedBag.roastedOn ? selectedBag.roastedOn.split("T")[0] : "");
       setOpenedOn(selectedBag.openedOn ? selectedBag.openedOn.split("T")[0] : "");
+      setBagBrewIndex(String((selectedBag.brews?.length ?? 0) + 1));
     }
   }, [selectedBag?.id]);
 
@@ -183,6 +185,7 @@ function NewBrewPageContent() {
         body: JSON.stringify({
           beanId: selectedBag ? undefined : selectedBean!.id,
           beanBagId: selectedBag?.id,
+          bagBrewIndex: selectedBag && bagBrewIndex !== "" ? parseInt(bagBrewIndex) : undefined,
           waterProfileId: selectedWater?.id,
           filterProfileId: selectedFilter?.id,
           grindProfileId: selectedGrind!.id,
@@ -517,6 +520,19 @@ function NewBrewPageContent() {
               >
                 No bag / skip
               </button>
+
+              {selectedBag && (
+                <div className="mt-3">
+                  <label className="text-stone-500 text-xs block mb-1">Which brew from this bag?</label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-stone-500 text-sm">#</span>
+                    <input type="number" min="1" step="1" value={bagBrewIndex}
+                      onChange={(e) => setBagBrewIndex(e.target.value)}
+                      className="input-field w-24" />
+                    <span className="text-stone-600 text-xs">1st, 2nd, 3rd… brew pulled from the bag</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -592,15 +608,12 @@ function NewBrewPageContent() {
                   <span className="text-stone-400 text-xs w-10 text-right">{selectedAiden.bloomTimeS}s</span>
                 </div>
                 {Array.isArray(selectedAiden.pours) && selectedAiden.pours.map((pour) => (
-                  <div key={pour.sequence} className="flex items-center gap-3">
-                    <span className="text-stone-500 text-xs w-14 shrink-0">Pour {pour.sequence}</span>
-                    <div className="flex-1 bg-stone-800 rounded-full h-5 overflow-hidden">
-                      <div className="h-full bg-amber-700 rounded-full flex items-center justify-end pr-2"
-                        style={{ width: `${Math.min(100, (pour.waterG / selectedAiden.waterG) * 100)}%` }}>
-                        <span className="text-white text-xs">{pour.waterG}g</span>
-                      </div>
+                  <div key={pour.sequence} className="flex items-center justify-between">
+                    <span className="text-stone-500 text-xs w-14 shrink-0">Pulse {pour.sequence}</span>
+                    <div className="text-right">
+                      <span className="text-amber-400 text-sm font-semibold">{pour.tempF}°F</span>
+                      {pour.pauseS != null && <span className="text-stone-500 text-xs ml-2">+{pour.pauseS}s</span>}
                     </div>
-                    <span className="text-stone-400 text-xs w-10 text-right">{pour.pauseS}s</span>
                   </div>
                 ))}
               </div>

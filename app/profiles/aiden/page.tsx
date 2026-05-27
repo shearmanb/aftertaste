@@ -3,7 +3,7 @@
 import AppShell from "@/components/AppShell";
 import { useEffect, useState } from "react";
 
-type Pour = { sequence: number; tempF: number };
+type Pour = { sequence: number; tempF: number; pauseS?: number };
 type AidenProfile = {
   id: string; name: string; coffeeG: number; waterG: number; tempF: number;
   bloomTimeS: number; bloomWaterG: number; pours: Pour[]; notes?: string | null;
@@ -58,7 +58,10 @@ function AidenSettingsCard({ p, onEdit }: { p: AidenProfile; onEdit: (p: AidenPr
           {pours.map((pour) => (
             <div key={pour.sequence} className="flex items-center justify-between">
               <span className="text-xs text-stone-500 font-medium">Pulse {pour.sequence}</span>
-              <span className="text-amber-400 text-sm font-semibold">{pour.tempF}°F</span>
+              <div className="text-right">
+                <span className="text-amber-400 text-sm font-semibold">{pour.tempF}°F</span>
+                {pour.pauseS != null && <span className="text-stone-500 text-xs ml-2">+{pour.pauseS}s</span>}
+              </div>
             </div>
           ))}
         </div>
@@ -83,7 +86,11 @@ export default function AidenProfilesPage() {
   const [bloomRatio, setBloomRatio] = useState("2");
   const [bloomTimeS, setBloomTimeS] = useState("45");
   const [bloomTempF, setBloomTempF] = useState("205");
-  const [pulseTemps, setPulseTemps] = useState(["205", "203", "200"]);
+  const [pulses, setPulses] = useState<{ tempF: string; pauseS: string }[]>([
+    { tempF: "205", pauseS: "30" },
+    { tempF: "203", pauseS: "30" },
+    { tempF: "200", pauseS: "30" },
+  ]);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -95,21 +102,29 @@ export default function AidenProfilesPage() {
   const totalWater = Math.round(coffee * (parseFloat(ratio) || 0));
   const bloomWater = Math.round(coffee * (parseFloat(bloomRatio) || 0));
 
-  function updatePulseTemp(i: number, val: string) {
-    setPulseTemps((prev) => prev.map((t, idx) => idx === i ? val : t));
+  function updatePulse(i: number, field: "tempF" | "pauseS", val: string) {
+    setPulses((prev) => prev.map((p, idx) => idx === i ? { ...p, [field]: val } : p));
   }
   function addPulse() {
-    setPulseTemps((prev) => [...prev, prev[prev.length - 1] ?? "200"]);
+    setPulses((prev) => {
+      const last = prev[prev.length - 1];
+      return [...prev, { tempF: last?.tempF ?? "200", pauseS: last?.pauseS ?? "30" }];
+    });
   }
   function removePulse(i: number) {
-    if (pulseTemps.length <= 1) return;
-    setPulseTemps((prev) => prev.filter((_, idx) => idx !== i));
+    if (pulses.length <= 1) return;
+    setPulses((prev) => prev.filter((_, idx) => idx !== i));
   }
 
   function resetForm() {
     setName(""); setCoffeeG("18"); setRatio("15"); setBloomRatio("2");
     setBloomTimeS("45"); setBloomTempF("205");
-    setPulseTemps(["205", "203", "200"]); setNotes("");
+    setPulses([
+      { tempF: "205", pauseS: "30" },
+      { tempF: "203", pauseS: "30" },
+      { tempF: "200", pauseS: "30" },
+    ]);
+    setNotes("");
   }
 
   function openEdit(p: AidenProfile) {
@@ -121,7 +136,9 @@ export default function AidenProfilesPage() {
     setBloomRatio((p.bloomWaterG / p.coffeeG).toFixed(1));
     setBloomTimeS(String(p.bloomTimeS));
     setBloomTempF(String(p.tempF));
-    setPulseTemps(pours.length > 0 ? pours.map((pour) => String(pour.tempF)) : ["205"]);
+    setPulses(pours.length > 0
+      ? pours.map((pour) => ({ tempF: String(pour.tempF), pauseS: pour.pauseS != null ? String(pour.pauseS) : "" }))
+      : [{ tempF: "205", pauseS: "" }]);
     setNotes(p.notes ?? "");
     setShowForm(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -133,7 +150,7 @@ export default function AidenProfilesPage() {
 
   async function save() {
     setSaving(true);
-    const pours = pulseTemps.map((t, i) => ({ sequence: i + 1, tempF: parseInt(t) || 0 }));
+    const pours = pulses.map((p, i) => ({ sequence: i + 1, tempF: parseInt(p.tempF) || 0, pauseS: parseInt(p.pauseS) || 0 }));
     const payload = {
       name,
       coffeeG: coffee,
@@ -219,19 +236,26 @@ export default function AidenProfilesPage() {
           </div>
 
           <div>
-            <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">Pulse Temps</p>
+            <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">Pulses</p>
             <div className="space-y-2">
-              {pulseTemps.map((t, i) => (
+              {pulses.map((p, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <label className="text-stone-500 text-xs w-14 shrink-0">Pulse {i + 1}</label>
-                  <input type="number" placeholder="°F" value={t} onChange={(e) => updatePulseTemp(i, e.target.value)} className="input-field flex-1" />
-                  <span className="text-stone-500 text-xs">°F</span>
-                  {pulseTemps.length > 1 && (
+                  <div className="flex items-center gap-1 flex-1">
+                    <input type="number" placeholder="temp" value={p.tempF} onChange={(e) => updatePulse(i, "tempF", e.target.value)} className="input-field w-full" />
+                    <span className="text-stone-500 text-xs shrink-0">°F</span>
+                  </div>
+                  <div className="flex items-center gap-1 flex-1">
+                    <input type="number" min="0" placeholder="pause" value={p.pauseS} onChange={(e) => updatePulse(i, "pauseS", e.target.value)} className="input-field w-full" />
+                    <span className="text-stone-500 text-xs shrink-0">s</span>
+                  </div>
+                  {pulses.length > 1 && (
                     <button onClick={() => removePulse(i)} className="text-stone-600 hover:text-red-400 text-lg leading-none px-1">×</button>
                   )}
                 </div>
               ))}
             </div>
+            <p className="text-stone-600 text-xs mt-1.5">Time is the pause after each pulse before the next.</p>
             <button onClick={addPulse} className="mt-2 text-amber-500 text-sm hover:text-amber-400">+ Add pulse</button>
           </div>
 

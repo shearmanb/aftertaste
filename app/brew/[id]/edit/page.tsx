@@ -25,6 +25,8 @@ export default function EditBrewPage() {
   const [grindProfileId, setGrindProfileId] = useState<string>("");
   const [aidenProfileId, setAidenProfileId] = useState<string>("");
   const [actualCoffeeG, setActualCoffeeG] = useState<string>("");
+  const [beanBagId, setBeanBagId] = useState<string | null>(null);
+  const [bagBrewIndex, setBagBrewIndex] = useState<string>("");
   const [roastedOn, setRoastedOn] = useState("");
   const [openedOn, setOpenedOn] = useState("");
   const [saving, setSaving] = useState(false);
@@ -45,6 +47,8 @@ export default function EditBrewPage() {
       setGrindProfileId(brew.grindProfileId);
       setAidenProfileId(brew.aidenProfileId);
       if (brew.actualCoffeeG != null) setActualCoffeeG(String(brew.actualCoffeeG));
+      setBeanBagId(brew.beanBagId ?? null);
+      if (brew.bagBrewIndex != null) setBagBrewIndex(String(brew.bagBrewIndex));
       if (brew.roastedOn) setRoastedOn(brew.roastedOn.split("T")[0]);
       if (brew.openedOn) setOpenedOn(brew.openedOn.split("T")[0]);
       setWaterProfiles(Array.isArray(water) ? water : []);
@@ -70,6 +74,7 @@ export default function EditBrewPage() {
         actualCoffeeG: actualCoffeeG !== "" ? parseFloat(actualCoffeeG) : null,
         roastedOn: roastedOn || null,
         openedOn: openedOn || null,
+        ...(beanBagId ? { bagBrewIndex: bagBrewIndex !== "" ? parseInt(bagBrewIndex) : null } : {}),
       }),
     });
     router.push(`/brew/${id}`);
@@ -165,6 +170,19 @@ export default function EditBrewPage() {
             <span className="text-stone-400 text-sm shrink-0">g</span>
           </div>
         </div>
+        {beanBagId && (
+          <div>
+            <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Brew # from bag</label>
+            <div className="flex items-center gap-2">
+              <span className="text-stone-500 text-sm">#</span>
+              <input type="number" min="1" step="1" value={bagBrewIndex}
+                onChange={(e) => setBagBrewIndex(e.target.value)}
+                placeholder="1st, 2nd, 3rd…"
+                className="bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 text-sm w-28 text-right" />
+              <span className="text-stone-600 text-xs">position in the bag</span>
+            </div>
+          </div>
+        )}
         <div>
           <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Bean Freshness <span className="text-stone-600 normal-case font-normal">(optional)</span></label>
           <div className="grid grid-cols-2 gap-3">

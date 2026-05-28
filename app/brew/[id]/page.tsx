@@ -140,6 +140,9 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
               <ScoreBar label="Chocolate" value={brew.tastingNote.chocolate} />
               <StrengthBar value={brew.tastingNote.strength} />
               <ScoreBar label="Sourness" value={brew.tastingNote.sourness} />
+              {(brew.tastingNote as any).grindAroma != null && (
+                <ScoreBar label="Grind Aroma" value={(brew.tastingNote as any).grindAroma} />
+              )}
             </div>
             {(() => {
               const confirmed = (brew.tastingNote as any).confirmedTags as string[] | undefined;

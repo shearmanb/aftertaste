@@ -21,6 +21,7 @@ type BrewData = {
     confirmedTags: string[]; missedTags: string[]; bonusTags: string[]; flavorTags: string[];
     initialThoughts?: string | null; bestPart?: string | null;
     worstPart?: string | null; changesToMake?: string | null; wouldBrewAgain: boolean;
+    grindAroma?: number | null;
   } | null;
 };
 
@@ -39,6 +40,7 @@ export default function TastePage() {
   const [strength, setStrength] = useState(0); // signed position: -10=too weak, 0=perfect, +10=too strong
   const [chocolate, setChocolate] = useState(2.5);
   const [sourness, setSourness] = useState(1);
+  const [grindAroma, setGrindAroma] = useState<number | null>(null);
   // 0 = unrated, 1 = tasted ✓, 2 = missed ✗
   const [bagTagStates, setBagTagStates] = useState<Record<string, 0 | 1 | 2>>({});
   const [bonusTags, setBonusTags] = useState<string[]>([]);
@@ -90,6 +92,7 @@ export default function TastePage() {
         setWorstPart(tn.worstPart ?? "");
         setChangesToMake(tn.changesToMake ?? "");
         setWouldBrewAgain(tn.wouldBrewAgain);
+        if (tn.grindAroma != null) setGrindAroma(tn.grindAroma);
         const states: Record<string, 0 | 1 | 2> = {};
         notes.forEach((n) => { states[n] = 0; });
         (tn.confirmedTags ?? []).forEach((t) => { if (t in states) states[t] = 1; });
@@ -141,6 +144,7 @@ export default function TastePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           overallScore, fruit, strength, chocolate, sourness,
+          ...(grindAroma !== null ? { grindAroma } : {}),
           confirmedTags, missedTags, bonusTags,
           flavorTags: [...confirmedTags, ...bonusTags],
           initialThoughts: initialThoughts || undefined,
@@ -193,6 +197,29 @@ export default function TastePage() {
           <TastingSlider label="Chocolate / Roastness" value={chocolate} min={0} onChange={setChocolate} lowLabel="None" highLabel="Rich" />
           <TastingSlider label="Strength" value={strength} onChange={setStrength} symmetric />
           <TastingSlider label="Sourness / Off-flavors" value={sourness} onChange={setSourness} lowLabel="None" highLabel="Sharp" />
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-stone-300 text-sm font-medium">Grind Aroma</span>
+              {grindAroma !== null ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-400 font-semibold text-sm">{grindAroma.toFixed(1)}</span>
+                  <button onClick={() => setGrindAroma(null)} className="text-stone-600 hover:text-stone-400 text-xs">clear</button>
+                </div>
+              ) : (
+                <button onClick={() => setGrindAroma(2.5)} className="text-xs text-stone-500 hover:text-stone-300 border border-stone-700 px-2 py-0.5 rounded">+ Rate</button>
+              )}
+            </div>
+            {grindAroma !== null && (
+              <>
+                <input type="range" min={0} max={5} step={0.5} value={grindAroma}
+                  onChange={(e) => setGrindAroma(parseFloat(e.target.value))}
+                  className="w-full accent-amber-500 h-3" />
+                <div className="flex justify-between text-xs text-stone-600 mt-1">
+                  <span>Muted</span><span>Incredible</span>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Flavor tags */}

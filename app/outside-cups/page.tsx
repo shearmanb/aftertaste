@@ -13,14 +13,19 @@ export default async function OutsideCupsPage() {
 
   return (
     <AppShell>
-      <div className="flex items-center justify-between mb-6 pt-2">
-        <h1 className="text-xl font-bold text-stone-100">Outside Cups</h1>
+      <div className="flex items-center justify-between mb-4 pt-2">
+        <h1 className="text-xl font-bold text-stone-100">Brews</h1>
         <Link
           href="/outside-cup/new"
           className="bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
         >
           + Log cup
         </Link>
+      </div>
+
+      <div className="flex gap-1 mb-5 bg-stone-900 border border-stone-800 rounded-xl p-1">
+        <Link href="/brews" className="flex-1 text-center text-sm font-medium py-1.5 rounded-lg transition-colors text-stone-500 hover:text-stone-300">Home Brews</Link>
+        <Link href="/outside-cups" className="flex-1 text-center text-sm font-medium py-1.5 rounded-lg transition-colors bg-stone-700 text-stone-100">Café Visits</Link>
       </div>
 
       {cups.length === 0 ? (

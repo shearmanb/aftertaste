@@ -4,6 +4,7 @@ import AppShell from "@/components/AppShell";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
+import { usePathname } from "next/navigation";
 
 type Brew = {
   id: string;
@@ -22,6 +23,7 @@ type Brew = {
 export default function BrewsPage() {
   const [brews, setBrews] = useState<Brew[]>([]);
   const [loading, setLoading] = useState(true);
+  const path = usePathname();
 
   useEffect(() => {
     fetch("/api/brews").then((r) => r.ok ? r.json() : []).then((data) => { setBrews(data); setLoading(false); }).catch(() => setLoading(false));
@@ -40,9 +42,18 @@ export default function BrewsPage() {
 
   return (
     <AppShell>
-      <div className="flex items-center justify-between mb-6 pt-2">
-        <h1 className="text-xl font-bold text-stone-100">All Brews</h1>
+      <div className="flex items-center justify-between mb-4 pt-2">
+        <h1 className="text-xl font-bold text-stone-100">Brews</h1>
         <Link href="/brew/new" className="bg-amber-600 hover:bg-amber-500 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-xl transition-colors">+</Link>
+      </div>
+
+      <div className="flex gap-1 mb-5 bg-stone-900 border border-stone-800 rounded-xl p-1">
+        <Link href="/brews" className={`flex-1 text-center text-sm font-medium py-1.5 rounded-lg transition-colors ${
+          path === "/brews" ? "bg-stone-700 text-stone-100" : "text-stone-500 hover:text-stone-300"
+        }`}>Home Brews</Link>
+        <Link href="/outside-cups" className={`flex-1 text-center text-sm font-medium py-1.5 rounded-lg transition-colors ${
+          path === "/outside-cups" ? "bg-stone-700 text-stone-100" : "text-stone-500 hover:text-stone-300"
+        }`}>Café Visits</Link>
       </div>
 
       {loading ? (

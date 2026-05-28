@@ -66,6 +66,34 @@ function NewBrewPageContent() {
   const [newRegion, setNewRegion] = useState("");
   const [newProcess, setNewProcess] = useState("");
 
+  // Quick-add water profile
+  const [showAddWater, setShowAddWater] = useState(false);
+  const [newWaterBrand, setNewWaterBrand] = useState("");
+  const [newWaterAdditives, setNewWaterAdditives] = useState("");
+  const [savingWater, setSavingWater] = useState(false);
+
+  // Quick-add filter profile
+  const [showAddFilter, setShowAddFilter] = useState(false);
+  const [newFilterName, setNewFilterName] = useState("");
+  const [savingFilter, setSavingFilter] = useState(false);
+
+  // Quick-add grind profile
+  const [showAddGrind, setShowAddGrind] = useState(false);
+  const [newGrindName, setNewGrindName] = useState("");
+  const [newGrindSetting, setNewGrindSetting] = useState("");
+  const [savingGrind, setSavingGrind] = useState(false);
+
+  // Quick-add Aiden profile
+  const [showAddAiden, setShowAddAiden] = useState(false);
+  const [newAidenName, setNewAidenName] = useState("");
+  const [newAidenCoffeeG, setNewAidenCoffeeG] = useState("");
+  const [newAidenWaterG, setNewAidenWaterG] = useState("");
+  const [newAidenTempF, setNewAidenTempF] = useState("");
+  const [newAidenBloomTimeS, setNewAidenBloomTimeS] = useState("");
+  const [newAidenBloomWaterG, setNewAidenBloomWaterG] = useState("");
+  const [newAidenPours, setNewAidenPours] = useState<{ tempF: string; pauseS: string }[]>([{ tempF: "", pauseS: "" }, { tempF: "", pauseS: "" }]);
+  const [savingAiden, setSavingAiden] = useState(false);
+
   useEffect(() => {
     const fetches = [
       fetch("/api/profiles/water").then((r) => r.json()),
@@ -248,6 +276,109 @@ function NewBrewPageContent() {
     }
   }
 
+  async function createWater() {
+    if (!newWaterBrand.trim()) return;
+    setSavingWater(true);
+    try {
+      const res = await fetch("/api/profiles/water", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brand: newWaterBrand.trim(), additives: newWaterAdditives.trim() || undefined }),
+      });
+      const profile = await res.json();
+      if (!res.ok) throw new Error(profile.error ?? `HTTP ${res.status}`);
+      setWaterProfiles((p) => [...p, profile]);
+      setSelectedWater(profile);
+      setShowAddWater(false);
+      setNewWaterBrand(""); setNewWaterAdditives("");
+      setStep(2);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to create water profile");
+    } finally {
+      setSavingWater(false);
+    }
+  }
+
+  async function createFilter() {
+    if (!newFilterName.trim()) return;
+    setSavingFilter(true);
+    try {
+      const res = await fetch("/api/profiles/filter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newFilterName.trim() }),
+      });
+      const profile = await res.json();
+      if (!res.ok) throw new Error(profile.error ?? `HTTP ${res.status}`);
+      setFilterProfiles((p) => [...p, profile]);
+      setSelectedFilter(profile);
+      setShowAddFilter(false);
+      setNewFilterName("");
+      setStep(3);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to create filter profile");
+    } finally {
+      setSavingFilter(false);
+    }
+  }
+
+  async function createGrind() {
+    if (!newGrindName.trim() || !newGrindSetting) return;
+    setSavingGrind(true);
+    try {
+      const res = await fetch("/api/profiles/grind", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newGrindName.trim(), setting: parseFloat(newGrindSetting) }),
+      });
+      const profile = await res.json();
+      if (!res.ok) throw new Error(profile.error ?? `HTTP ${res.status}`);
+      setGrindProfiles((p) => [...p, profile].sort((a, b) => a.setting - b.setting));
+      setSelectedGrind(profile);
+      setShowAddGrind(false);
+      setNewGrindName(""); setNewGrindSetting("");
+      setStep(5);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to create grind profile");
+    } finally {
+      setSavingGrind(false);
+    }
+  }
+
+  async function createAiden() {
+    const name = newAidenName.trim();
+    const coffeeG = parseFloat(newAidenCoffeeG);
+    const waterG = parseFloat(newAidenWaterG);
+    const tempF = parseInt(newAidenTempF);
+    const bloomTimeS = parseInt(newAidenBloomTimeS);
+    const bloomWaterG = parseFloat(newAidenBloomWaterG);
+    if (!name || isNaN(coffeeG) || isNaN(waterG) || isNaN(tempF) || isNaN(bloomTimeS) || isNaN(bloomWaterG)) return;
+    const pours = newAidenPours
+      .filter((p) => p.tempF !== "")
+      .map((p, i) => ({ sequence: i + 1, tempF: parseInt(p.tempF) || tempF, pauseS: parseInt(p.pauseS) || 0 }));
+    setSavingAiden(true);
+    try {
+      const res = await fetch("/api/profiles/aiden", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, coffeeG, waterG, tempF, bloomTimeS, bloomWaterG, pours }),
+      });
+      const profile = await res.json();
+      if (!res.ok) throw new Error(profile.error ?? `HTTP ${res.status}`);
+      setAidenProfiles((p) => [...p, profile].sort((a, b) => a.name.localeCompare(b.name)));
+      setSelectedAiden(profile);
+      setActualCoffeeG(String(profile.coffeeG));
+      setShowAddAiden(false);
+      setNewAidenName(""); setNewAidenCoffeeG(""); setNewAidenWaterG(""); setNewAidenTempF("");
+      setNewAidenBloomTimeS(""); setNewAidenBloomWaterG("");
+      setNewAidenPours([{ tempF: "", pauseS: "" }, { tempF: "", pauseS: "" }]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to create Aiden profile");
+    } finally {
+      setSavingAiden(false);
+    }
+  }
+
   const totalSteps = 5;
 
   return (
@@ -271,7 +402,7 @@ function NewBrewPageContent() {
 
       {sourceBrew && (
         <div className="bg-amber-950/40 border border-amber-800/40 rounded-xl px-4 py-2.5 mb-5 flex items-center gap-2">
-          <span className="text-amber-500 text-sm">③</span>
+          <span className="text-amber-500 text-sm">④</span>
           <p className="text-amber-300/80 text-xs">
             Branching from <span className="font-medium text-amber-300">{sourceBrew.bean.producer.name} — {sourceBrew.bean.name}</span>
             <span className="text-amber-500/60"> · {format(new Date(sourceBrew.brewedAt), "MMM d, yyyy")}</span>
@@ -281,14 +412,37 @@ function NewBrewPageContent() {
 
       {step === 1 && (
         <div>
-          <p className="text-stone-400 text-sm mb-4 font-medium">Select water</p>
-          {waterProfiles.length === 0 ? (
-            <div className="text-center py-10 text-stone-500">
-              <p className="text-3xl mb-2">≋</p>
-              <p>No water profiles yet.</p>
-              <a href="/profiles/water" className="text-amber-500 underline text-sm mt-1 block">Add a water profile first →</a>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-stone-400 text-sm font-medium">Select water</p>
+            <button onClick={() => setShowAddWater((v) => !v)} className="text-amber-500 hover:text-amber-400 text-sm font-medium">
+              {showAddWater ? "Cancel" : "+ New"}
+            </button>
+          </div>
+          {showAddWater && (
+            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
+              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">New water profile</p>
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Brand / source *</label>
+                <input type="text" placeholder="e.g. Third Wave Water" value={newWaterBrand}
+                  onChange={(e) => setNewWaterBrand(e.target.value)} className="input-field" />
+              </div>
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Additives <span className="text-stone-700">(optional)</span></label>
+                <input type="text" placeholder="e.g. Classic Light Roast mineral packet" value={newWaterAdditives}
+                  onChange={(e) => setNewWaterAdditives(e.target.value)} className="input-field" />
+              </div>
+              <button onClick={createWater} disabled={savingWater || !newWaterBrand.trim()}
+                className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm">
+                {savingWater ? "Saving…" : "Create & select →"}
+              </button>
             </div>
-          ) : (
+          )}
+          {!showAddWater && waterProfiles.length === 0 ? (
+            <div className="text-center py-10 text-stone-500">
+              <p className="text-3xl mb-2">≈</p>
+              <p>No water profiles yet — use "+ New" to add one.</p>
+            </div>
+          ) : !showAddWater && (
             <div className="space-y-2">
               {waterProfiles.map((w) => (
                 <button key={w.id} onClick={() => { setSelectedWater(w); setStep(2); }}
@@ -302,7 +456,7 @@ function NewBrewPageContent() {
               ))}
             </div>
           )}
-          {selectedWater && (
+          {selectedWater && !showAddWater && (
             <button onClick={() => setStep(2)} className="w-full mt-4 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">Next →</button>
           )}
         </div>
@@ -310,14 +464,27 @@ function NewBrewPageContent() {
 
       {step === 2 && (
         <div>
-          <p className="text-stone-400 text-sm mb-4 font-medium">Select filter <span className="text-stone-600 font-normal">(optional)</span></p>
-          {filterProfiles.length === 0 ? (
-            <div className="text-center py-10 text-stone-500">
-              <p className="text-3xl mb-2">▽</p>
-              <p>No filters yet.</p>
-              <a href="/profiles/filter" className="text-amber-500 underline text-sm mt-1 block">Add filters →</a>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-stone-400 text-sm font-medium">Select filter <span className="text-stone-600 font-normal">(optional)</span></p>
+            <button onClick={() => setShowAddFilter((v) => !v)} className="text-amber-500 hover:text-amber-400 text-sm font-medium">
+              {showAddFilter ? "Cancel" : "+ New"}
+            </button>
+          </div>
+          {showAddFilter && (
+            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
+              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">New filter profile</p>
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Filter name *</label>
+                <input type="text" placeholder="e.g. Sibarist Flat" value={newFilterName}
+                  onChange={(e) => setNewFilterName(e.target.value)} className="input-field" />
+              </div>
+              <button onClick={createFilter} disabled={savingFilter || !newFilterName.trim()}
+                className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm">
+                {savingFilter ? "Saving…" : "Create & select →"}
+              </button>
             </div>
-          ) : (
+          )}
+          {!showAddFilter && (
             <div className="space-y-2">
               {filterProfiles.map((f) => (
                 <button key={f.id} onClick={() => { setSelectedFilter(f); setStep(3); }}
@@ -328,13 +495,16 @@ function NewBrewPageContent() {
                   {selectedFilter?.id === f.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
                 </button>
               ))}
+              {filterProfiles.length === 0 && (
+                <p className="text-center text-stone-600 text-sm py-6">No filters yet — use "+ New" to add one.</p>
+              )}
             </div>
           )}
           <button onClick={() => { setSelectedFilter(null); setStep(3); }}
             className="w-full mt-4 py-3 bg-stone-800 hover:bg-stone-700 text-stone-400 font-medium rounded-xl transition-colors">
             Skip (no filter)
           </button>
-          {selectedFilter && (
+          {selectedFilter && !showAddFilter && (
             <button onClick={() => setStep(3)} className="w-full mt-2 py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl transition-colors">Next →</button>
           )}
         </div>
@@ -544,20 +714,55 @@ function NewBrewPageContent() {
 
       {step === 4 && (
         <div>
-          <p className="text-stone-400 text-sm mb-4 font-medium">Select grind profile</p>
-          <div className="space-y-2 mb-4">
-            {grindProfiles.map((gp) => (
-              <button key={gp.id} onClick={() => setSelectedGrind(gp)}
-                className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${
-                  selectedGrind?.id === gp.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"
-                }`}>
-                <p className="font-semibold text-stone-100">{gp.name}</p>
-                <p className="text-stone-400 text-sm">Setting {gp.setting}</p>
-                {selectedGrind?.id === gp.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
-              </button>
-            ))}
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-stone-400 text-sm font-medium">Select grind profile</p>
+            <button onClick={() => setShowAddGrind((v) => !v)} className="text-amber-500 hover:text-amber-400 text-sm font-medium">
+              {showAddGrind ? "Cancel" : "+ New"}
+            </button>
           </div>
-          {selectedGrind && (
+          {showAddGrind && (
+            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
+              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">New grind profile</p>
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Profile name *</label>
+                <input type="text" placeholder="e.g. Pourovers Light" value={newGrindName}
+                  onChange={(e) => setNewGrindName(e.target.value)} className="input-field" />
+              </div>
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Setting (Ode Gen 2) *</label>
+                <input type="number" min="0" max="11" step="0.5" placeholder="e.g. 3.5" value={newGrindSetting}
+                  onChange={(e) => setNewGrindSetting(e.target.value)} className="input-field" />
+              </div>
+              {newGrindSetting && !isNaN(parseFloat(newGrindSetting)) && (
+                <div className="bg-stone-900 border border-stone-700 rounded-xl p-3">
+                  <OdeDial setting={parseFloat(newGrindSetting)} />
+                  <p className="text-stone-400 text-xs text-center mt-2">Setting <span className="text-amber-400 font-bold">{newGrindSetting}</span></p>
+                </div>
+              )}
+              <button onClick={createGrind} disabled={savingGrind || !newGrindName.trim() || !newGrindSetting}
+                className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm">
+                {savingGrind ? "Saving…" : "Create & select →"}
+              </button>
+            </div>
+          )}
+          {!showAddGrind && (
+            <div className="space-y-2 mb-4">
+              {grindProfiles.map((gp) => (
+                <button key={gp.id} onClick={() => setSelectedGrind(gp)}
+                  className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${
+                    selectedGrind?.id === gp.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"
+                  }`}>
+                  <p className="font-semibold text-stone-100">{gp.name}</p>
+                  <p className="text-stone-400 text-sm">Setting {gp.setting}</p>
+                  {selectedGrind?.id === gp.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
+                </button>
+              ))}
+              {grindProfiles.length === 0 && (
+                <p className="text-center text-stone-600 text-sm py-6">No grind profiles yet — use "+ New" to add one.</p>
+              )}
+            </div>
+          )}
+          {selectedGrind && !showAddGrind && (
             <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
               <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide mb-3 text-center">Dial Confirmation</p>
               <OdeDial setting={selectedGrind.setting} />
@@ -573,22 +778,102 @@ function NewBrewPageContent() {
 
       {step === 5 && (
         <div>
-          <p className="text-stone-400 text-sm mb-4 font-medium">Select Aiden profile</p>
-          <div className="space-y-2 mb-4">
-            {aidenProfiles.map((ap) => (
-              <button key={ap.id} onClick={() => { setSelectedAiden(ap); setActualCoffeeG(String(ap.coffeeG)); }}
-                className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${
-                  selectedAiden?.id === ap.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"
-                }`}>
-                <p className="font-semibold text-stone-100">{ap.name}</p>
-                <p className="text-stone-400 text-sm">{ap.coffeeG}g / {ap.waterG}g · {ap.tempF}°F
-                  <span className="ml-1 text-stone-600">(ratio {(ap.waterG / ap.coffeeG).toFixed(1)}:1)</span>
-                </p>
-                {selectedAiden?.id === ap.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
-              </button>
-            ))}
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-stone-400 text-sm font-medium">Select Aiden profile</p>
+            <button onClick={() => setShowAddAiden((v) => !v)} className="text-amber-500 hover:text-amber-400 text-sm font-medium">
+              {showAddAiden ? "Cancel" : "+ New"}
+            </button>
           </div>
-          {selectedAiden && (
+          {showAddAiden && (
+            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
+              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">New Aiden profile</p>
+              <div>
+                <label className="text-stone-500 text-xs block mb-1">Profile name *</label>
+                <input type="text" placeholder="e.g. Light Roast 1:16" value={newAidenName}
+                  onChange={(e) => setNewAidenName(e.target.value)} className="input-field" />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-stone-500 text-xs block mb-1">Coffee (g) *</label>
+                  <input type="number" min="0" step="0.1" placeholder="20" value={newAidenCoffeeG}
+                    onChange={(e) => setNewAidenCoffeeG(e.target.value)} className="input-field" />
+                </div>
+                <div>
+                  <label className="text-stone-500 text-xs block mb-1">Water (g) *</label>
+                  <input type="number" min="0" step="1" placeholder="320" value={newAidenWaterG}
+                    onChange={(e) => setNewAidenWaterG(e.target.value)} className="input-field" />
+                </div>
+                <div>
+                  <label className="text-stone-500 text-xs block mb-1">Temp (°F) *</label>
+                  <input type="number" min="150" max="215" step="1" placeholder="205" value={newAidenTempF}
+                    onChange={(e) => setNewAidenTempF(e.target.value)} className="input-field" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-stone-500 text-xs block mb-1">Bloom water (g) *</label>
+                  <input type="number" min="0" step="1" placeholder="60" value={newAidenBloomWaterG}
+                    onChange={(e) => setNewAidenBloomWaterG(e.target.value)} className="input-field" />
+                </div>
+                <div>
+                  <label className="text-stone-500 text-xs block mb-1">Bloom time (s) *</label>
+                  <input type="number" min="0" step="1" placeholder="45" value={newAidenBloomTimeS}
+                    onChange={(e) => setNewAidenBloomTimeS(e.target.value)} className="input-field" />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-stone-500 text-xs">Pulses (temp + pause after)</label>
+                  <button type="button"
+                    onClick={() => setNewAidenPours((p) => [...p, { tempF: newAidenTempF, pauseS: "" }])}
+                    className="text-amber-500 hover:text-amber-400 text-xs">+ Add pulse</button>
+                </div>
+                <div className="space-y-2">
+                  {newAidenPours.map((pour, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-stone-600 text-xs w-12 shrink-0">Pulse {i + 1}</span>
+                      <input type="number" min="150" max="215" step="1" placeholder={newAidenTempF || "°F"}
+                        value={pour.tempF} onChange={(e) => setNewAidenPours((p) => p.map((x, j) => j === i ? { ...x, tempF: e.target.value } : x))}
+                        className="input-field flex-1" />
+                      <span className="text-stone-600 text-xs shrink-0">°F +</span>
+                      <input type="number" min="0" step="1" placeholder="0s"
+                        value={pour.pauseS} onChange={(e) => setNewAidenPours((p) => p.map((x, j) => j === i ? { ...x, pauseS: e.target.value } : x))}
+                        className="input-field w-16" />
+                      <span className="text-stone-600 text-xs shrink-0">s</span>
+                      {newAidenPours.length > 1 && (
+                        <button type="button" onClick={() => setNewAidenPours((p) => p.filter((_, j) => j !== i))}
+                          className="text-stone-700 hover:text-red-400 text-xs shrink-0">×</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button onClick={createAiden} disabled={savingAiden || !newAidenName.trim() || !newAidenCoffeeG || !newAidenWaterG || !newAidenTempF || !newAidenBloomTimeS || !newAidenBloomWaterG}
+                className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm">
+                {savingAiden ? "Saving…" : "Create & select →"}
+              </button>
+            </div>
+          )}
+          {!showAddAiden && (
+            <div className="space-y-2 mb-4">
+              {aidenProfiles.map((ap) => (
+                <button key={ap.id} onClick={() => { setSelectedAiden(ap); setActualCoffeeG(String(ap.coffeeG)); }}
+                  className={`w-full text-left bg-stone-900 border rounded-xl p-4 transition-colors ${
+                    selectedAiden?.id === ap.id ? "border-amber-500" : "border-stone-800 hover:border-amber-700"
+                  }`}>
+                  <p className="font-semibold text-stone-100">{ap.name}</p>
+                  <p className="text-stone-400 text-sm">{ap.coffeeG}g / {ap.waterG}g · {ap.tempF}°F
+                    <span className="ml-1 text-stone-600">(ratio {(ap.waterG / ap.coffeeG).toFixed(1)}:1)</span>
+                  </p>
+                  {selectedAiden?.id === ap.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
+                </button>
+              ))}
+              {aidenProfiles.length === 0 && (
+                <p className="text-center text-stone-600 text-sm py-6">No Aiden profiles yet — use "+ New" to add one.</p>
+              )}
+            </div>
+          )}
+          {selectedAiden && !showAddAiden && (
             <div className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden mb-4">
               <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide px-4 pt-4 pb-2">Aiden Settings</p>
               <div className="grid grid-cols-3 divide-x divide-stone-800 border-y border-stone-800">

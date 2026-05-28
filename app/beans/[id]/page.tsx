@@ -18,7 +18,15 @@ export default async function BeanDetailPage({ params }: { params: Promise<{ id:
         orderBy: { createdAt: "desc" },
         include: {
           brews: {
-            select: { id: true, actualCoffeeG: true, aidenProfile: { select: { coffeeG: true } } },
+            orderBy: [{ bagBrewIndex: "asc" }, { brewedAt: "asc" }],
+            select: {
+              id: true,
+              actualCoffeeG: true,
+              bagBrewIndex: true,
+              brewedAt: true,
+              aidenProfile: { select: { coffeeG: true } },
+              tastingNote: { select: { overallScore: true } },
+            },
           },
         },
       },
@@ -89,6 +97,12 @@ export default async function BeanDetailPage({ params }: { params: Promise<{ id:
         notes: bag.notes ?? null,
         brewCount: bag.brews.length,
         gramsUsed: bag.brews.reduce((sum, b) => sum + (b.actualCoffeeG ?? b.aidenProfile.coffeeG), 0),
+        brews: bag.brews.map((b) => ({
+          id: b.id,
+          brewedAt: b.brewedAt.toISOString(),
+          bagBrewIndex: b.bagBrewIndex ?? null,
+          overallScore: b.tastingNote?.overallScore ?? null,
+        })),
       }))} />
 
       <div className="mt-4">

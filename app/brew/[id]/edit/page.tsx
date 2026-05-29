@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { format } from "date-fns";
 
 type WaterProfile = { id: string; brand: string; additives?: string | null };
 type FilterProfile = { id: string; name: string };
 type Bean = { id: string; producer: { name: string }; name: string; roastLevel: string; region?: string | null };
 type GrindProfile = { id: string; name: string; setting: number };
 type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number };
+type BeanBag = { id: string; roastedOn?: string | null; openedOn?: string | null; weightG?: number | null; notes?: string | null };
 
 export default function EditBrewPage() {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +20,7 @@ export default function EditBrewPage() {
   const [beans, setBeans] = useState<Bean[]>([]);
   const [grindProfiles, setGrindProfiles] = useState<GrindProfile[]>([]);
   const [aidenProfiles, setAidenProfiles] = useState<AidenProfile[]>([]);
+  const [beanBags, setBeanBags] = useState<BeanBag[]>([]);
 
   const [waterProfileId, setWaterProfileId] = useState<string>("");
   const [filterProfileId, setFilterProfileId] = useState<string>("");
@@ -25,7 +28,7 @@ export default function EditBrewPage() {
   const [grindProfileId, setGrindProfileId] = useState<string>("");
   const [aidenProfileId, setAidenProfileId] = useState<string>("");
   const [actualCoffeeG, setActualCoffeeG] = useState<string>("");
-  const [beanBagId, setBeanBagId] = useState<string | null>(null);
+  const [beanBagId, setBeanBagId] = useState<string>("");
   const [bagBrewIndex, setBagBrewIndex] = useState<string>("");
   const [roastedOn, setRoastedOn] = useState("");
   const [openedOn, setOpenedOn] = useState("");
@@ -47,7 +50,7 @@ export default function EditBrewPage() {
       setGrindProfileId(brew.grindProfileId);
       setAidenProfileId(brew.aidenProfileId);
       if (brew.actualCoffeeG != null) setActualCoffeeG(String(brew.actualCoffeeG));
-      setBeanBagId(brew.beanBagId ?? null);
+      setBeanBagId(brew.beanBagId ?? "");
       if (brew.bagBrewIndex != null) setBagBrewIndex(String(brew.bagBrewIndex));
       if (brew.roastedOn) setRoastedOn(brew.roastedOn.split("T")[0]);
       if (brew.openedOn) setOpenedOn(brew.openedOn.split("T")[0]);
@@ -56,9 +59,25 @@ export default function EditBrewPage() {
       setBeans(Array.isArray(beansData) ? beansData : []);
       setGrindProfiles(Array.isArray(grind) ? grind : []);
       setAidenProfiles(Array.isArray(aiden) ? aiden : []);
-      setLoading(false);
-    });
+      // fetch bags for the brew's bean
+      return fetch(`/api/bean-bags?beanId=${brew.beanId}`).then((r) => r.json()).then((bags) => {
+        setBeanBags(Array.isArray(bags) ? bags : []);
+      });
+    }).finally(() => setLoading(false));
   }, [id]);
+
+  // reload bags when bean changes
+  useEffect(() => {
+    if (!beanId) return;
+    fetch(`/api/bean-bags?beanId=${beanId}`).then((r) => r.json()).then((bags) => {
+      setBeanBags(Array.isArray(bags) ? bags : []);
+      // clear bag selection if it doesn't belong to the new bean
+      if (beanBagId && !bags.find((b: BeanBag) => b.id === beanBagId)) {
+        setBeanBagId("");
+        setBagBrewIndex("");
+      }
+    });
+  }, [beanId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function save() {
     setSaving(true);
@@ -74,7 +93,8 @@ export default function EditBrewPage() {
         actualCoffeeG: actualCoffeeG !== "" ? parseFloat(actualCoffeeG) : null,
         roastedOn: roastedOn || null,
         openedOn: openedOn || null,
-        ...(beanBagId ? { bagBrewIndex: bagBrewIndex !== "" ? parseInt(bagBrewIndex) : null } : {}),
+        beanBagId: beanBagId || null,
+        bagBrewIndex: beanBagId && bagBrewIndex !== "" ? parseInt(bagBrewIndex) : null,
       }),
     });
     router.push(`/brew/${id}`);
@@ -128,6 +148,45 @@ export default function EditBrewPage() {
             ))}
           </div>
         </div>
+
+        {beanBags.length > 0 && (
+          <div>
+            <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">
+              Bag <span className="text-stone-600 normal-case font-normal">(optional)</span>
+            </label>
+            <div className="space-y-2">
+              <button
+                onClick={() => { setBeanBagId(""); setBagBrewIndex(""); }}
+                className={`w-full text-left rounded-xl p-3 border transition-colors ${beanBagId === "" ? "border-amber-500 bg-stone-900" : "border-stone-800 bg-stone-900 hover:border-stone-600"}`}
+              >
+                <p className="text-stone-400 text-sm">No bag</p>
+              </button>
+              {beanBags.map((bag) => (
+                <button key={bag.id} onClick={() => setBeanBagId(bag.id)}
+                  className={`w-full text-left rounded-xl p-3 border transition-colors ${beanBagId === bag.id ? "border-amber-500 bg-stone-900" : "border-stone-800 bg-stone-900 hover:border-stone-600"}`}>
+                  <p className="text-stone-100 text-sm font-medium">
+                    {bag.roastedOn ? `Roasted ${format(new Date(bag.roastedOn), "MMM d, yyyy")}` : bag.openedOn ? `Opened ${format(new Date(bag.openedOn), "MMM d, yyyy")}` : "Bag"}
+                    {bag.weightG ? ` · ${bag.weightG}g` : ""}
+                  </p>
+                  {bag.notes && <p className="text-stone-500 text-xs">{bag.notes}</p>}
+                </button>
+              ))}
+            </div>
+            {beanBagId && (
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-stone-500 text-sm">#</span>
+                <input
+                  type="number" min="1" step="1" value={bagBrewIndex}
+                  onChange={(e) => setBagBrewIndex(e.target.value)}
+                  placeholder="1, 2, 3…"
+                  className="bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 text-sm w-24 text-right"
+                />
+                <span className="text-stone-500 text-sm">brew from this bag</span>
+              </div>
+            )}
+          </div>
+        )}
+
         <div>
           <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Grind Profile</label>
           <div className="space-y-2">
@@ -170,19 +229,6 @@ export default function EditBrewPage() {
             <span className="text-stone-400 text-sm shrink-0">g</span>
           </div>
         </div>
-        {beanBagId && (
-          <div>
-            <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Brew # from bag</label>
-            <div className="flex items-center gap-2">
-              <span className="text-stone-500 text-sm">#</span>
-              <input type="number" min="1" step="1" value={bagBrewIndex}
-                onChange={(e) => setBagBrewIndex(e.target.value)}
-                placeholder="1st, 2nd, 3rd…"
-                className="bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 text-sm w-28 text-right" />
-              <span className="text-stone-600 text-xs">position in the bag</span>
-            </div>
-          </div>
-        )}
         <div>
           <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Bean Freshness <span className="text-stone-600 normal-case font-normal">(optional)</span></label>
           <div className="grid grid-cols-2 gap-3">

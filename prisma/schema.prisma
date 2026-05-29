@@ -153,3 +153,11 @@ model OutsideCup {
   notes        String?
   createdAt    DateTime  @default(now())
 }
+
+model LoginAttempt {
+  id          String   @id @default(cuid())
+  ip          String
+  attemptedAt DateTime @default(now())
+
+  @@index([ip, attemptedAt])
+}

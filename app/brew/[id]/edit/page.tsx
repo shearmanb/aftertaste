@@ -32,6 +32,7 @@ export default function EditBrewPage() {
   const [bagBrewIndex, setBagBrewIndex] = useState<string>("");
   const [roastedOn, setRoastedOn] = useState("");
   const [openedOn, setOpenedOn] = useState("");
+  const [brewedAt, setBrewedAt] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -54,6 +55,7 @@ export default function EditBrewPage() {
       if (brew.bagBrewIndex != null) setBagBrewIndex(String(brew.bagBrewIndex));
       if (brew.roastedOn) setRoastedOn(brew.roastedOn.split("T")[0]);
       if (brew.openedOn) setOpenedOn(brew.openedOn.split("T")[0]);
+      if (brew.brewedAt) setBrewedAt(new Date(brew.brewedAt).toISOString().slice(0, 16));
       setWaterProfiles(Array.isArray(water) ? water : []);
       setFilterProfiles(Array.isArray(filter) ? filter : []);
       setBeans(Array.isArray(beansData) ? beansData : []);
@@ -93,6 +95,7 @@ export default function EditBrewPage() {
         actualCoffeeG: actualCoffeeG !== "" ? parseFloat(actualCoffeeG) : null,
         roastedOn: roastedOn || null,
         openedOn: openedOn || null,
+        brewedAt: brewedAt || undefined,
         beanBagId: beanBagId || null,
         bagBrewIndex: beanBagId && bagBrewIndex !== "" ? parseInt(bagBrewIndex) : null,
       }),
@@ -241,6 +244,15 @@ export default function EditBrewPage() {
               <input type="date" value={openedOn} onChange={(e) => setOpenedOn(e.target.value)} className="input-field" />
             </div>
           </div>
+        </div>
+        <div>
+          <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2 block">Brew time</label>
+          <input
+            type="datetime-local"
+            value={brewedAt}
+            onChange={(e) => setBrewedAt(e.target.value)}
+            className="input-field"
+          />
         </div>
         <button onClick={save} disabled={saving || !beanId || !grindProfileId || !aidenProfileId}
           className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors">

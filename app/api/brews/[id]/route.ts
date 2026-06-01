@@ -28,7 +28,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   try {
     const { id } = await params;
     const body = await req.json();
-    const { beanId, beanBagId, waterProfileId, filterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn, brewIssues, miscVars, actualCoffeeG, bagBrewIndex } = body;
+    const { beanId, beanBagId, waterProfileId, filterProfileId, grindProfileId, aidenProfileId, roastedOn, openedOn, brewIssues, miscVars, actualCoffeeG, bagBrewIndex, brewedAt } = body;
     const data: Record<string, unknown> = {};
     if (beanId !== undefined) data.beanId = beanId;
     if ("beanBagId" in body) data.beanBagId = beanBagId || null;
@@ -37,6 +37,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if ("filterProfileId" in body) data.filterProfileId = filterProfileId || null;
     if (grindProfileId !== undefined) data.grindProfileId = grindProfileId;
     if (aidenProfileId !== undefined) data.aidenProfileId = aidenProfileId;
+    if ("brewedAt" in body) data.brewedAt = brewedAt ? new Date(brewedAt) : null;
     if ("roastedOn" in body) data.roastedOn = roastedOn ? new Date(roastedOn) : null;
     if ("openedOn" in body) data.openedOn = openedOn ? new Date(openedOn) : null;
     if (brewIssues !== undefined) data.brewIssues = brewIssues;

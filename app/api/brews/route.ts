@@ -49,6 +49,7 @@ export async function POST(req: Request) {
       miscVars,
       actualCoffeeG,
       bagBrewIndex: rawBagBrewIndex,
+      brewedAt,
     } = await req.json();
 
     let beanId = rawBeanId;
@@ -67,6 +68,7 @@ export async function POST(req: Request) {
     const brew = await prisma.brew.create({
       data: {
         beanId,
+        brewedAt: brewedAt ? new Date(brewedAt) : undefined,
         beanBagId: beanBagId || undefined,
         bagBrewIndex,
         waterProfileId,

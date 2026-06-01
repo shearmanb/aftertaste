@@ -36,6 +36,7 @@ function NewBrewPageContent() {
   const [sourceBrew, setSourceBrew] = useState<SourceBrew | null>(null);
   const [roastedOn, setRoastedOn] = useState("");
   const [openedOn, setOpenedOn] = useState("");
+  const [brewedAt, setBrewedAt] = useState(() => new Date().toISOString().slice(0, 16));
   const [submitting, setSubmitting] = useState(false);
 
   // Bag selection
@@ -222,6 +223,7 @@ function NewBrewPageContent() {
           roastedOn: !selectedBag && roastedOn ? roastedOn : undefined,
           openedOn: !selectedBag && openedOn ? openedOn : undefined,
           miscVars: selectedMiscVars,
+          brewedAt,
         }),
       });
       const brew = await res.json();
@@ -1006,6 +1008,16 @@ function NewBrewPageContent() {
               </div>
             </div>
           )}
+
+          <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
+            <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide block mb-2">Brew time</label>
+            <input
+              type="datetime-local"
+              value={brewedAt}
+              onChange={(e) => setBrewedAt(e.target.value)}
+              className="input-field"
+            />
+          </div>
 
           <button disabled={!selectedAiden || submitting} onClick={submit}
             className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors">

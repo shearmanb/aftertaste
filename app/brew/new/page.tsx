@@ -780,6 +780,16 @@ function NewBrewPageContent() {
 
       {step === 5 && (
         <div>
+          <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
+            <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide block mb-2">Brew time</label>
+            <input
+              type="datetime-local"
+              value={brewedAt}
+              onChange={(e) => setBrewedAt(e.target.value)}
+              className="input-field"
+            />
+          </div>
+
           <div className="flex items-center justify-between mb-4">
             <p className="text-stone-400 text-sm font-medium">Select Aiden profile</p>
             <button onClick={() => setShowAddAiden((v) => !v)} className="text-amber-500 hover:text-amber-400 text-sm font-medium">
@@ -1008,16 +1018,6 @@ function NewBrewPageContent() {
               </div>
             </div>
           )}
-
-          <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
-            <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide block mb-2">Brew time</label>
-            <input
-              type="datetime-local"
-              value={brewedAt}
-              onChange={(e) => setBrewedAt(e.target.value)}
-              className="input-field"
-            />
-          </div>
 
           <button disabled={!selectedAiden || submitting} onClick={submit}
             className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors">

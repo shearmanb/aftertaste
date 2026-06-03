@@ -199,8 +199,9 @@ function ScatterPlot({ data }: { data: { days: number; score: number }[] }) {
 
 export default async function StatsPage() {
   const brews = await prisma.brew.findMany({
+    take: 1000,
     orderBy: { brewedAt: "asc" },
-    include: { bean: true, beanBag: true, tastingNote: true },
+    include: { bean: true, beanBag: true, tastingNote: true, grindProfile: true, waterProfile: true },
   });
 
   const outsideCups = await prisma.outsideCup.count();
@@ -253,6 +254,28 @@ export default async function StatsPage() {
         : null;
     })
     .filter((d): d is { days: number; score: number } => d !== null);
+
+  // Score by grind profile
+  const byGrind: Record<string, number[]> = {};
+  for (const b of rated) {
+    const k = `${b.grindProfile.name} (${b.grindProfile.setting})`;
+    (byGrind[k] ??= []).push(b.tastingNote!.overallScore);
+  }
+  const grindData = Object.entries(byGrind)
+    .filter(([, scores]) => scores.length >= 2)
+    .map(([label, scores]) => ({ label, value: avg(scores), count: scores.length }));
+
+  // Score by water profile
+  const byWater: Record<string, number[]> = {};
+  for (const b of rated) {
+    const k = b.waterProfile
+      ? b.waterProfile.brand + (b.waterProfile.additives ? ` · ${b.waterProfile.additives}` : "")
+      : "No water profile";
+    (byWater[k] ??= []).push(b.tastingNote!.overallScore);
+  }
+  const waterData = Object.entries(byWater)
+    .filter(([, scores]) => scores.length >= 2)
+    .map(([label, scores]) => ({ label, value: avg(scores), count: scores.length }));
 
   // Top confirmed flavor tags
   const tagCounts: Record<string, number> = {};
@@ -335,6 +358,26 @@ export default async function StatsPage() {
                 Score by process
               </p>
               <HBarChart data={processData} />
+            </div>
+          )}
+
+          {/* By grind profile */}
+          {grindData.length > 0 && (
+            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4">
+              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">
+                Score by grind profile
+              </p>
+              <HBarChart data={grindData} />
+            </div>
+          )}
+
+          {/* By water profile */}
+          {waterData.length > 0 && (
+            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4">
+              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">
+                Score by water profile
+              </p>
+              <HBarChart data={waterData} />
             </div>
           )}
 

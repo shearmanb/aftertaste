@@ -3,17 +3,15 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import OdeDial from "@/components/OdeDial";
+import AddWaterForm from "@/components/brew/AddWaterForm";
+import AddFilterForm from "@/components/brew/AddFilterForm";
+import AddBeanForm from "@/components/brew/AddBeanForm";
+import AddBagForm from "@/components/brew/AddBagForm";
+import AddGrindForm from "@/components/brew/AddGrindForm";
+import AddAidenForm from "@/components/brew/AddAidenForm";
+import { createBrew } from "@/app/brew/actions";
 import { format } from "date-fns";
-
-type Pour = { sequence: number; tempF: number; pauseS: number };
-type WaterProfile = { id: string; brand: string; additives?: string | null };
-type FilterProfile = { id: string; name: string };
-type Bean = { id: string; producer: { name: string }; name: string; roastLevel: string; region?: string | null; process?: string | null };
-type GrindProfile = { id: string; name: string; setting: number };
-type AidenProfile = { id: string; name: string; coffeeG: number; waterG: number; tempF: number; bloomTimeS: number; bloomWaterG: number; pours: Pour[] };
-type SourceBrew = { brewedAt: string; roastedOn?: string | null; openedOn?: string | null; beanBagId?: string | null; bean: Bean; waterProfile?: WaterProfile | null; filterProfile?: FilterProfile | null; grindProfile: GrindProfile; aidenProfile: AidenProfile };
-type Producer = { id: string; name: string };
-type BeanBag = { id: string; beanId: string; roastedOn?: string | null; openedOn?: string | null; exhaustedOn?: string | null; weightG?: number | null; notes?: string | null; brews?: { id: string }[] };
+import type { WaterProfile, FilterProfile, Bean, GrindProfile, AidenProfile, BeanBag, SourceBrew, Producer, Pour } from "@/lib/types";
 
 function NewBrewPageContent() {
   const router = useRouter();
@@ -21,80 +19,51 @@ function NewBrewPageContent() {
   const fromId = searchParams.get("from");
 
   const [step, setStep] = useState(1);
+
+  // Profile lists
   const [waterProfiles, setWaterProfiles] = useState<WaterProfile[]>([]);
   const [filterProfiles, setFilterProfiles] = useState<FilterProfile[]>([]);
   const [beans, setBeans] = useState<Bean[]>([]);
   const [grindProfiles, setGrindProfiles] = useState<GrindProfile[]>([]);
   const [aidenProfiles, setAidenProfiles] = useState<AidenProfile[]>([]);
+  const [producers, setProducers] = useState<Producer[]>([]);
+  const [roastLevels, setRoastLevels] = useState<string[]>([]);
+  const [processes, setProcesses] = useState<string[]>([]);
+  const [miscVarOptions, setMiscVarOptions] = useState<string[]>([]);
 
+  // Selections
   const [selectedWater, setSelectedWater] = useState<WaterProfile | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<FilterProfile | null>(null);
   const [selectedBean, setSelectedBean] = useState<Bean | null>(null);
   const [selectedGrind, setSelectedGrind] = useState<GrindProfile | null>(null);
   const [selectedAiden, setSelectedAiden] = useState<AidenProfile | null>(null);
+  const [selectedMiscVars, setSelectedMiscVars] = useState<string[]>([]);
   const [actualCoffeeG, setActualCoffeeG] = useState<string>("");
-  const [sourceBrew, setSourceBrew] = useState<SourceBrew | null>(null);
-  const [roastedOn, setRoastedOn] = useState("");
-  const [openedOn, setOpenedOn] = useState("");
-  const [brewedAt, setBrewedAt] = useState(() => new Date().toISOString().slice(0, 16));
-  const [submitting, setSubmitting] = useState(false);
 
-  // Bag selection
+  // Bag tracking
   const [bags, setBags] = useState<BeanBag[]>([]);
   const [selectedBag, setSelectedBag] = useState<BeanBag | null>(null);
   const [bagBrewIndex, setBagBrewIndex] = useState<string>("");
-  const [showNewBagForm, setShowNewBagForm] = useState(false);
-  const [newBagRoastedOn, setNewBagRoastedOn] = useState("");
-  const [newBagOpenedOn, setNewBagOpenedOn] = useState("");
-  const [newBagWeightG, setNewBagWeightG] = useState("");
-  const [newBagNotes, setNewBagNotes] = useState("");
-  const [savingBag, setSavingBag] = useState(false);
 
-  // Misc variables
-  const [miscVarOptions, setMiscVarOptions] = useState<string[]>([]);
-  const [selectedMiscVars, setSelectedMiscVars] = useState<string[]>([]);
+  // Freshness (no-bag path)
+  const [roastedOn, setRoastedOn] = useState("");
+  const [openedOn, setOpenedOn] = useState("");
+  const [brewedAt, setBrewedAt] = useState(() => new Date().toISOString().slice(0, 16));
 
-  // Quick-add bean form
-  const [producers, setProducers] = useState<Producer[]>([]);
-  const [roastLevels, setRoastLevels] = useState<string[]>([]);
-  const [processes, setProcesses] = useState<string[]>([]);
-  const [showAddBean, setShowAddBean] = useState(false);
-  const [addingBean, setAddingBean] = useState(false);
-  const [newProducerId, setNewProducerId] = useState("");
-  const [newProducerName, setNewProducerName] = useState("");
-  const [newBeanName, setNewBeanName] = useState("");
-  const [newRoastLevel, setNewRoastLevel] = useState("");
-  const [newRegion, setNewRegion] = useState("");
-  const [newProcess, setNewProcess] = useState("");
+  // Source brew (branching)
+  const [sourceBrew, setSourceBrew] = useState<SourceBrew | null>(null);
 
-  // Quick-add water profile
+  // Add-form visibility toggles
   const [showAddWater, setShowAddWater] = useState(false);
-  const [newWaterBrand, setNewWaterBrand] = useState("");
-  const [newWaterAdditives, setNewWaterAdditives] = useState("");
-  const [savingWater, setSavingWater] = useState(false);
-
-  // Quick-add filter profile
   const [showAddFilter, setShowAddFilter] = useState(false);
-  const [newFilterName, setNewFilterName] = useState("");
-  const [savingFilter, setSavingFilter] = useState(false);
-
-  // Quick-add grind profile
+  const [showAddBean, setShowAddBean] = useState(false);
+  const [showAddBag, setShowAddBag] = useState(false);
   const [showAddGrind, setShowAddGrind] = useState(false);
-  const [newGrindName, setNewGrindName] = useState("");
-  const [newGrindSetting, setNewGrindSetting] = useState("");
-  const [savingGrind, setSavingGrind] = useState(false);
-
-  // Quick-add Aiden profile
   const [showAddAiden, setShowAddAiden] = useState(false);
-  const [newAidenName, setNewAidenName] = useState("");
-  const [newAidenCoffeeG, setNewAidenCoffeeG] = useState("");
-  const [newAidenWaterG, setNewAidenWaterG] = useState("");
-  const [newAidenTempF, setNewAidenTempF] = useState("");
-  const [newAidenBloomTimeS, setNewAidenBloomTimeS] = useState("");
-  const [newAidenBloomWaterG, setNewAidenBloomWaterG] = useState("");
-  const [newAidenPours, setNewAidenPours] = useState<{ tempF: string; pauseS: string }[]>([{ tempF: "", pauseS: "" }, { tempF: "", pauseS: "" }]);
-  const [savingAiden, setSavingAiden] = useState(false);
 
+  const [submitting, setSubmitting] = useState(false);
+
+  // Initial data load
   useEffect(() => {
     const fetches = [
       fetch("/api/profiles/water").then((r) => r.json()),
@@ -120,7 +89,6 @@ function NewBrewPageContent() {
       setProducers(Array.isArray(producersData) ? producersData : []);
       const rl = Array.isArray(roastData) ? roastData.map((o: { value: string }) => o.value) : [];
       setRoastLevels(rl);
-      setNewRoastLevel(rl[0] ?? "");
       setProcesses(Array.isArray(processData) ? processData.map((o: { value: string }) => o.value) : []);
       setMiscVarOptions(Array.isArray(miscVarData) ? miscVarData.map((o: { value: string }) => o.value) : []);
       if (source) {
@@ -136,7 +104,7 @@ function NewBrewPageContent() {
     });
   }, [fromId]);
 
-  // Load bags when a bean is selected
+  // Load bags when bean changes
   useEffect(() => {
     if (!selectedBean) { setBags([]); setSelectedBag(null); return; }
     fetch(`/api/bean-bags?beanId=${selectedBean.id}`)
@@ -144,10 +112,9 @@ function NewBrewPageContent() {
       .then((data) => {
         const list: BeanBag[] = Array.isArray(data) ? data : [];
         setBags(list);
-        // Auto-select the most recent non-exhausted bag from the source brew, or the first active one
         if (fromId && sourceBrew?.beanBagId) {
           const match = list.find((b) => b.id === sourceBrew.beanBagId);
-          if (match) { setSelectedBag(match); return; }
+          if (match && !match.exhaustedOn) { setSelectedBag(match); return; }
         }
         const active = list.find((b) => !b.exhaustedOn);
         if (active) setSelectedBag(active);
@@ -155,7 +122,7 @@ function NewBrewPageContent() {
       .catch(() => setBags([]));
   }, [selectedBean?.id]);
 
-  // Update freshness dates and default bag position when bag changes
+  // Sync freshness dates from selected bag
   useEffect(() => {
     if (selectedBag) {
       setRoastedOn(selectedBag.roastedOn ? selectedBag.roastedOn.split("T")[0] : "");
@@ -177,207 +144,27 @@ function NewBrewPageContent() {
       });
   }, [selectedBean?.id, fromId]);
 
-  async function createAndSelectBag() {
-    if (!selectedBean) return;
-    setSavingBag(true);
-    try {
-      const res = await fetch("/api/bean-bags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          beanId: selectedBean.id,
-          roastedOn: newBagRoastedOn || undefined,
-          openedOn: newBagOpenedOn || undefined,
-          weightG: newBagWeightG ? parseFloat(newBagWeightG) : undefined,
-          notes: newBagNotes || undefined,
-        }),
-      });
-      const bag = await res.json();
-      if (!res.ok) throw new Error(bag.error ?? `HTTP ${res.status}`);
-      setBags((prev) => [bag, ...prev]);
-      setSelectedBag(bag);
-      setShowNewBagForm(false);
-      setNewBagRoastedOn(""); setNewBagOpenedOn(""); setNewBagWeightG(""); setNewBagNotes("");
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to create bag");
-    } finally {
-      setSavingBag(false);
-    }
-  }
-
   async function submit() {
     setSubmitting(true);
     try {
-      const res = await fetch("/api/brews", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          beanId: selectedBag ? undefined : selectedBean!.id,
-          beanBagId: selectedBag?.id,
-          bagBrewIndex: selectedBag && bagBrewIndex !== "" ? parseInt(bagBrewIndex) : undefined,
-          waterProfileId: selectedWater?.id,
-          filterProfileId: selectedFilter?.id,
-          grindProfileId: selectedGrind!.id,
-          aidenProfileId: selectedAiden!.id,
-          actualCoffeeG: actualCoffeeG !== "" ? parseFloat(actualCoffeeG) : undefined,
-          roastedOn: !selectedBag && roastedOn ? roastedOn : undefined,
-          openedOn: !selectedBag && openedOn ? openedOn : undefined,
-          miscVars: selectedMiscVars,
-          brewedAt,
-        }),
+      const brew = await createBrew({
+        beanId: selectedBag ? undefined : selectedBean!.id,
+        beanBagId: selectedBag?.id,
+        bagBrewIndex: selectedBag && bagBrewIndex !== "" ? parseInt(bagBrewIndex) : undefined,
+        waterProfileId: selectedWater?.id,
+        filterProfileId: selectedFilter?.id,
+        grindProfileId: selectedGrind!.id,
+        aidenProfileId: selectedAiden!.id,
+        actualCoffeeG: actualCoffeeG !== "" ? parseFloat(actualCoffeeG) : undefined,
+        roastedOn: !selectedBag && roastedOn ? roastedOn : undefined,
+        openedOn: !selectedBag && openedOn ? openedOn : undefined,
+        miscVars: selectedMiscVars,
+        brewedAt,
       });
-      const brew = await res.json();
-      if (!res.ok) throw new Error(brew.error ?? `HTTP ${res.status}`);
       router.push(`/brew/${brew.id}/taste`);
     } catch (err) {
       alert(err instanceof Error ? `Save failed: ${err.message}` : "Save failed");
       setSubmitting(false);
-    }
-  }
-
-  async function addBean() {
-    if (!newBeanName.trim() || !newRoastLevel) return;
-    setAddingBean(true);
-    try {
-      let producerId = newProducerId;
-      if (!producerId) {
-        if (!newProducerName.trim()) { setAddingBean(false); return; }
-        const pr = await fetch("/api/producers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: newProducerName.trim() }),
-        });
-        const newProd = await pr.json();
-        if (!pr.ok) throw new Error(newProd.error ?? "Failed to create producer");
-        setProducers((p) => [...p, newProd]);
-        producerId = newProd.id;
-      }
-      const br = await fetch("/api/beans", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          producerId,
-          name: newBeanName.trim(),
-          roastLevel: newRoastLevel,
-          region: newRegion.trim() || undefined,
-          process: newProcess || undefined,
-        }),
-      });
-      const newBean = await br.json();
-      if (!br.ok) throw new Error(newBean.error ?? "Failed to create bean");
-      setBeans((b) => [newBean, ...b]);
-      setSelectedBean(newBean);
-      setShowAddBean(false);
-      setNewProducerId(""); setNewProducerName(""); setNewBeanName("");
-      setNewRegion(""); setNewProcess("");
-      setStep(4);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to save");
-    } finally {
-      setAddingBean(false);
-    }
-  }
-
-  async function createWater() {
-    if (!newWaterBrand.trim()) return;
-    setSavingWater(true);
-    try {
-      const res = await fetch("/api/profiles/water", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brand: newWaterBrand.trim(), additives: newWaterAdditives.trim() || undefined }),
-      });
-      const profile = await res.json();
-      if (!res.ok) throw new Error(profile.error ?? `HTTP ${res.status}`);
-      setWaterProfiles((p) => [...p, profile]);
-      setSelectedWater(profile);
-      setShowAddWater(false);
-      setNewWaterBrand(""); setNewWaterAdditives("");
-      setStep(2);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to create water profile");
-    } finally {
-      setSavingWater(false);
-    }
-  }
-
-  async function createFilter() {
-    if (!newFilterName.trim()) return;
-    setSavingFilter(true);
-    try {
-      const res = await fetch("/api/profiles/filter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newFilterName.trim() }),
-      });
-      const profile = await res.json();
-      if (!res.ok) throw new Error(profile.error ?? `HTTP ${res.status}`);
-      setFilterProfiles((p) => [...p, profile]);
-      setSelectedFilter(profile);
-      setShowAddFilter(false);
-      setNewFilterName("");
-      setStep(3);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to create filter profile");
-    } finally {
-      setSavingFilter(false);
-    }
-  }
-
-  async function createGrind() {
-    if (!newGrindName.trim() || !newGrindSetting) return;
-    setSavingGrind(true);
-    try {
-      const res = await fetch("/api/profiles/grind", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newGrindName.trim(), setting: parseFloat(newGrindSetting) }),
-      });
-      const profile = await res.json();
-      if (!res.ok) throw new Error(profile.error ?? `HTTP ${res.status}`);
-      setGrindProfiles((p) => [...p, profile].sort((a, b) => a.setting - b.setting));
-      setSelectedGrind(profile);
-      setShowAddGrind(false);
-      setNewGrindName(""); setNewGrindSetting("");
-      setStep(5);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to create grind profile");
-    } finally {
-      setSavingGrind(false);
-    }
-  }
-
-  async function createAiden() {
-    const name = newAidenName.trim();
-    const coffeeG = parseFloat(newAidenCoffeeG);
-    const waterG = parseFloat(newAidenWaterG);
-    const tempF = parseInt(newAidenTempF);
-    const bloomTimeS = parseInt(newAidenBloomTimeS);
-    const bloomWaterG = parseFloat(newAidenBloomWaterG);
-    if (!name || isNaN(coffeeG) || isNaN(waterG) || isNaN(tempF) || isNaN(bloomTimeS) || isNaN(bloomWaterG)) return;
-    const pours = newAidenPours
-      .filter((p) => p.tempF !== "")
-      .map((p, i) => ({ sequence: i + 1, tempF: parseInt(p.tempF) || tempF, pauseS: parseInt(p.pauseS) || 0 }));
-    setSavingAiden(true);
-    try {
-      const res = await fetch("/api/profiles/aiden", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, coffeeG, waterG, tempF, bloomTimeS, bloomWaterG, pours }),
-      });
-      const profile = await res.json();
-      if (!res.ok) throw new Error(profile.error ?? `HTTP ${res.status}`);
-      setAidenProfiles((p) => [...p, profile].sort((a, b) => a.name.localeCompare(b.name)));
-      setSelectedAiden(profile);
-      setActualCoffeeG(String(profile.coffeeG));
-      setShowAddAiden(false);
-      setNewAidenName(""); setNewAidenCoffeeG(""); setNewAidenWaterG(""); setNewAidenTempF("");
-      setNewAidenBloomTimeS(""); setNewAidenBloomWaterG("");
-      setNewAidenPours([{ tempF: "", pauseS: "" }, { tempF: "", pauseS: "" }]);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to create Aiden profile");
-    } finally {
-      setSavingAiden(false);
     }
   }
 
@@ -412,6 +199,7 @@ function NewBrewPageContent() {
         </div>
       )}
 
+      {/* Step 1: Water */}
       {step === 1 && (
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -421,23 +209,10 @@ function NewBrewPageContent() {
             </button>
           </div>
           {showAddWater && (
-            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
-              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">New water profile</p>
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Brand / source *</label>
-                <input type="text" placeholder="e.g. Third Wave Water" value={newWaterBrand}
-                  onChange={(e) => setNewWaterBrand(e.target.value)} className="input-field" />
-              </div>
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Additives <span className="text-stone-700">(optional)</span></label>
-                <input type="text" placeholder="e.g. Classic Light Roast mineral packet" value={newWaterAdditives}
-                  onChange={(e) => setNewWaterAdditives(e.target.value)} className="input-field" />
-              </div>
-              <button onClick={createWater} disabled={savingWater || !newWaterBrand.trim()}
-                className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm">
-                {savingWater ? "Saving…" : "Create & select →"}
-              </button>
-            </div>
+            <AddWaterForm
+              onCreated={(p) => { setWaterProfiles((prev) => [...prev, p]); setSelectedWater(p); setShowAddWater(false); setStep(2); }}
+              onCancel={() => setShowAddWater(false)}
+            />
           )}
           {!showAddWater && waterProfiles.length === 0 ? (
             <div className="text-center py-10 text-stone-500">
@@ -464,6 +239,7 @@ function NewBrewPageContent() {
         </div>
       )}
 
+      {/* Step 2: Filter */}
       {step === 2 && (
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -473,18 +249,10 @@ function NewBrewPageContent() {
             </button>
           </div>
           {showAddFilter && (
-            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
-              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">New filter profile</p>
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Filter name *</label>
-                <input type="text" placeholder="e.g. Sibarist Flat" value={newFilterName}
-                  onChange={(e) => setNewFilterName(e.target.value)} className="input-field" />
-              </div>
-              <button onClick={createFilter} disabled={savingFilter || !newFilterName.trim()}
-                className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm">
-                {savingFilter ? "Saving…" : "Create & select →"}
-              </button>
-            </div>
+            <AddFilterForm
+              onCreated={(p) => { setFilterProfiles((prev) => [...prev, p]); setSelectedFilter(p); setShowAddFilter(false); setStep(3); }}
+              onCancel={() => setShowAddFilter(false)}
+            />
           )}
           {!showAddFilter && (
             <div className="space-y-2">
@@ -512,134 +280,74 @@ function NewBrewPageContent() {
         </div>
       )}
 
+      {/* Step 3: Bean + Bag */}
       {step === 3 && (
         <div>
           <div className="flex items-center justify-between mb-4">
             <p className="text-stone-400 text-sm font-medium">Select beans</p>
-            <button onClick={() => setShowAddBean((v) => !v)}
-              className="text-amber-500 hover:text-amber-400 text-sm font-medium">
+            <button onClick={() => setShowAddBean((v) => !v)} className="text-amber-500 hover:text-amber-400 text-sm font-medium">
               {showAddBean ? "Cancel" : "+ New bean"}
             </button>
           </div>
 
           {showAddBean && (
-            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
-              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">Quick add bean</p>
-
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Producer</label>
-                <select value={newProducerId} onChange={(e) => { setNewProducerId(e.target.value); setNewProducerName(""); }}
-                  className="input-field">
-                  <option value="">+ New producer…</option>
-                  {producers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-                {!newProducerId && (
-                  <input type="text" placeholder="Producer name" value={newProducerName}
-                    onChange={(e) => setNewProducerName(e.target.value)}
-                    className="input-field mt-2" />
-                )}
-              </div>
-
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Name / blend</label>
-                <input type="text" placeholder="e.g. Yirgacheffe Natural" value={newBeanName}
-                  onChange={(e) => setNewBeanName(e.target.value)}
-                  className="input-field" />
-              </div>
-
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Roast level</label>
-                <select value={newRoastLevel} onChange={(e) => setNewRoastLevel(e.target.value)} className="input-field">
-                  {roastLevels.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Region <span className="text-stone-700">(optional)</span></label>
-                <input type="text" placeholder="e.g. Yirgacheffe" value={newRegion}
-                  onChange={(e) => setNewRegion(e.target.value)}
-                  className="input-field" />
-              </div>
-
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Process <span className="text-stone-700">(optional)</span></label>
-                <select value={newProcess} onChange={(e) => setNewProcess(e.target.value)} className="input-field">
-                  <option value="">—</option>
-                  {processes.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-
-              <button onClick={addBean} disabled={addingBean || !newBeanName.trim() || !newRoastLevel || (!newProducerId && !newProducerName.trim())}
-                className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm">
-                {addingBean ? "Saving…" : "Add & select →"}
-              </button>
-            </div>
+            <AddBeanForm
+              initialProducers={producers}
+              roastLevels={roastLevels}
+              processes={processes}
+              onCreated={(bean) => {
+                setBeans((b) => [bean, ...b]);
+                setSelectedBean(bean);
+                setShowAddBean(false);
+                setStep(4);
+              }}
+              onCancel={() => setShowAddBean(false)}
+            />
           )}
 
-          {!showAddBean && beans.length === 0 ? (
-            <div className="text-center py-10 text-stone-500">
-              <p>No beans yet.</p>
-              <p className="text-xs mt-1">Use "+ New bean" above to add one.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {beans.map((bean) => (
-                <button key={bean.id} onClick={() => { setSelectedBean(bean); setSelectedBag(null); }}
-                  className={`w-full text-left rounded-xl p-4 border transition-colors ${
-                    selectedBean?.id === bean.id ? "border-amber-500 bg-stone-900" : "bg-stone-900 border-stone-800 hover:border-amber-600"
-                  }`}>
-                  <p className="font-semibold text-stone-100">{bean.producer?.name}</p>
-                  <p className="text-stone-400 text-sm">{bean.name} · {bean.roastLevel}{bean.region ? ` · ${bean.region}` : ""}{bean.process ? ` · ${bean.process}` : ""}</p>
-                  {selectedBean?.id === bean.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
-                </button>
-              ))}
-            </div>
+          {!showAddBean && (
+            beans.length === 0 ? (
+              <div className="text-center py-10 text-stone-500">
+                <p>No beans yet.</p>
+                <p className="text-xs mt-1">Use "+ New bean" above to add one.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {beans.map((bean) => (
+                  <button key={bean.id} onClick={() => { setSelectedBean(bean); setSelectedBag(null); }}
+                    className={`w-full text-left rounded-xl p-4 border transition-colors ${
+                      selectedBean?.id === bean.id ? "border-amber-500 bg-stone-900" : "bg-stone-900 border-stone-800 hover:border-amber-600"
+                    }`}>
+                    <p className="font-semibold text-stone-100">{bean.producer?.name}</p>
+                    <p className="text-stone-400 text-sm">{bean.name} · {bean.roastLevel}{bean.region ? ` · ${bean.region}` : ""}{bean.process ? ` · ${bean.process}` : ""}</p>
+                    {selectedBean?.id === bean.id && <p className="text-amber-500 text-xs mt-1">Selected ✓</p>}
+                  </button>
+                ))}
+              </div>
+            )
           )}
 
-          {/* Bag picker — shown after a bean is selected */}
           {selectedBean && !showAddBean && (
             <div className="mt-5">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-stone-400 text-sm font-medium">Which bag?</p>
                 <button
-                  onClick={() => { setShowNewBagForm((v) => !v); setSelectedBag(null); }}
+                  onClick={() => { setShowAddBag((v) => !v); if (!showAddBag) setSelectedBag(null); }}
                   className="text-amber-500 hover:text-amber-400 text-xs font-medium"
                 >
-                  {showNewBagForm ? "Cancel" : "+ New bag"}
+                  {showAddBag ? "Cancel" : "+ New bag"}
                 </button>
               </div>
 
-              {showNewBagForm && (
-                <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-3 space-y-3">
-                  <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">New bag</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-stone-500 text-xs block mb-1">Roasted on</label>
-                      <input type="date" value={newBagRoastedOn} onChange={(e) => setNewBagRoastedOn(e.target.value)} className="input-field" />
-                    </div>
-                    <div>
-                      <label className="text-stone-500 text-xs block mb-1">Opened</label>
-                      <input type="date" value={newBagOpenedOn} onChange={(e) => setNewBagOpenedOn(e.target.value)} className="input-field" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-stone-500 text-xs block mb-1">Bag size <span className="text-stone-700">(g, optional)</span></label>
-                      <input type="number" min="0" step="1" value={newBagWeightG} onChange={(e) => setNewBagWeightG(e.target.value)} placeholder="e.g. 250" className="input-field" />
-                    </div>
-                    <div>
-                      <label className="text-stone-500 text-xs block mb-1">Notes <span className="text-stone-700">(optional)</span></label>
-                      <input type="text" value={newBagNotes} onChange={(e) => setNewBagNotes(e.target.value)} className="input-field" />
-                    </div>
-                  </div>
-                  <button onClick={createAndSelectBag} disabled={savingBag}
-                    className="w-full py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm">
-                    {savingBag ? "Saving…" : "Create bag & select →"}
-                  </button>
-                </div>
+              {showAddBag && (
+                <AddBagForm
+                  beanId={selectedBean.id}
+                  onCreated={(bag) => { setBags((prev) => [bag, ...prev]); setSelectedBag(bag); setShowAddBag(false); }}
+                  onCancel={() => setShowAddBag(false)}
+                />
               )}
 
-              {!showNewBagForm && bags.length > 0 && (
+              {!showAddBag && bags.length > 0 && (
                 <div className="space-y-2 mb-2">
                   {bags.map((bag) => {
                     const isActive = !bag.exhaustedOn;
@@ -678,7 +386,7 @@ function NewBrewPageContent() {
                 </div>
               )}
 
-              {!showNewBagForm && bags.length === 0 && (
+              {!showAddBag && bags.length === 0 && (
                 <p className="text-stone-600 text-xs mb-2">No bags on record for this bean — create one above, or skip.</p>
               )}
 
@@ -714,6 +422,7 @@ function NewBrewPageContent() {
         </div>
       )}
 
+      {/* Step 4: Grind */}
       {step === 4 && (
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -723,29 +432,10 @@ function NewBrewPageContent() {
             </button>
           </div>
           {showAddGrind && (
-            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
-              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">New grind profile</p>
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Profile name *</label>
-                <input type="text" placeholder="e.g. Pourovers Light" value={newGrindName}
-                  onChange={(e) => setNewGrindName(e.target.value)} className="input-field" />
-              </div>
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Setting (Ode Gen 2) *</label>
-                <input type="number" min="0" max="11" step="0.5" placeholder="e.g. 3.5" value={newGrindSetting}
-                  onChange={(e) => setNewGrindSetting(e.target.value)} className="input-field" />
-              </div>
-              {newGrindSetting && !isNaN(parseFloat(newGrindSetting)) && (
-                <div className="bg-stone-900 border border-stone-700 rounded-xl p-3">
-                  <OdeDial setting={parseFloat(newGrindSetting)} />
-                  <p className="text-stone-400 text-xs text-center mt-2">Setting <span className="text-amber-400 font-bold">{newGrindSetting}</span></p>
-                </div>
-              )}
-              <button onClick={createGrind} disabled={savingGrind || !newGrindName.trim() || !newGrindSetting}
-                className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm">
-                {savingGrind ? "Saving…" : "Create & select →"}
-              </button>
-            </div>
+            <AddGrindForm
+              onCreated={(p) => { setGrindProfiles((prev) => [...prev, p].sort((a, b) => a.setting - b.setting)); setSelectedGrind(p); setShowAddGrind(false); setStep(5); }}
+              onCancel={() => setShowAddGrind(false)}
+            />
           )}
           {!showAddGrind && (
             <div className="space-y-2 mb-4">
@@ -778,16 +468,12 @@ function NewBrewPageContent() {
         </div>
       )}
 
+      {/* Step 5: Aiden + brew details */}
       {step === 5 && (
         <div>
           <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
             <label className="text-stone-400 text-xs font-semibold uppercase tracking-wide block mb-2">Brew time</label>
-            <input
-              type="datetime-local"
-              value={brewedAt}
-              onChange={(e) => setBrewedAt(e.target.value)}
-              className="input-field"
-            />
+            <input type="datetime-local" value={brewedAt} onChange={(e) => setBrewedAt(e.target.value)} className="input-field" />
           </div>
 
           <div className="flex items-center justify-between mb-4">
@@ -797,74 +483,15 @@ function NewBrewPageContent() {
             </button>
           </div>
           {showAddAiden && (
-            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
-              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide">New Aiden profile</p>
-              <div>
-                <label className="text-stone-500 text-xs block mb-1">Profile name *</label>
-                <input type="text" placeholder="e.g. Light Roast 1:16" value={newAidenName}
-                  onChange={(e) => setNewAidenName(e.target.value)} className="input-field" />
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="text-stone-500 text-xs block mb-1">Coffee (g) *</label>
-                  <input type="number" min="0" step="0.1" placeholder="20" value={newAidenCoffeeG}
-                    onChange={(e) => setNewAidenCoffeeG(e.target.value)} className="input-field" />
-                </div>
-                <div>
-                  <label className="text-stone-500 text-xs block mb-1">Water (g) *</label>
-                  <input type="number" min="0" step="1" placeholder="320" value={newAidenWaterG}
-                    onChange={(e) => setNewAidenWaterG(e.target.value)} className="input-field" />
-                </div>
-                <div>
-                  <label className="text-stone-500 text-xs block mb-1">Temp (°F) *</label>
-                  <input type="number" min="150" max="215" step="1" placeholder="205" value={newAidenTempF}
-                    onChange={(e) => setNewAidenTempF(e.target.value)} className="input-field" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-stone-500 text-xs block mb-1">Bloom water (g) *</label>
-                  <input type="number" min="0" step="1" placeholder="60" value={newAidenBloomWaterG}
-                    onChange={(e) => setNewAidenBloomWaterG(e.target.value)} className="input-field" />
-                </div>
-                <div>
-                  <label className="text-stone-500 text-xs block mb-1">Bloom time (s) *</label>
-                  <input type="number" min="0" step="1" placeholder="45" value={newAidenBloomTimeS}
-                    onChange={(e) => setNewAidenBloomTimeS(e.target.value)} className="input-field" />
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-stone-500 text-xs">Pulses (temp + pause after)</label>
-                  <button type="button"
-                    onClick={() => setNewAidenPours((p) => [...p, { tempF: newAidenTempF, pauseS: "" }])}
-                    className="text-amber-500 hover:text-amber-400 text-xs">+ Add pulse</button>
-                </div>
-                <div className="space-y-2">
-                  {newAidenPours.map((pour, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <span className="text-stone-600 text-xs w-12 shrink-0">Pulse {i + 1}</span>
-                      <input type="number" min="150" max="215" step="1" placeholder={newAidenTempF || "°F"}
-                        value={pour.tempF} onChange={(e) => setNewAidenPours((p) => p.map((x, j) => j === i ? { ...x, tempF: e.target.value } : x))}
-                        className="input-field flex-1" />
-                      <span className="text-stone-600 text-xs shrink-0">°F +</span>
-                      <input type="number" min="0" step="1" placeholder="0s"
-                        value={pour.pauseS} onChange={(e) => setNewAidenPours((p) => p.map((x, j) => j === i ? { ...x, pauseS: e.target.value } : x))}
-                        className="input-field w-16" />
-                      <span className="text-stone-600 text-xs shrink-0">s</span>
-                      {newAidenPours.length > 1 && (
-                        <button type="button" onClick={() => setNewAidenPours((p) => p.filter((_, j) => j !== i))}
-                          className="text-stone-700 hover:text-red-400 text-xs shrink-0">×</button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <button onClick={createAiden} disabled={savingAiden || !newAidenName.trim() || !newAidenCoffeeG || !newAidenWaterG || !newAidenTempF || !newAidenBloomTimeS || !newAidenBloomWaterG}
-                className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors text-sm">
-                {savingAiden ? "Saving…" : "Create & select →"}
-              </button>
-            </div>
+            <AddAidenForm
+              onCreated={(p) => {
+                setAidenProfiles((prev) => [...prev, p].sort((a, b) => a.name.localeCompare(b.name)));
+                setSelectedAiden(p);
+                setActualCoffeeG(String(p.coffeeG));
+                setShowAddAiden(false);
+              }}
+              onCancel={() => setShowAddAiden(false)}
+            />
           )}
           {!showAddAiden && (
             <div className="space-y-2 mb-4">
@@ -885,6 +512,7 @@ function NewBrewPageContent() {
               )}
             </div>
           )}
+
           {selectedAiden && !showAddAiden && (
             <div className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden mb-4">
               <p className="text-stone-500 text-xs font-semibold uppercase tracking-wide px-4 pt-4 pb-2">Aiden Settings</p>
@@ -904,7 +532,7 @@ function NewBrewPageContent() {
                   </div>
                   <span className="text-stone-400 text-xs w-10 text-right">{selectedAiden.bloomTimeS}s</span>
                 </div>
-                {Array.isArray(selectedAiden.pours) && selectedAiden.pours.map((pour) => (
+                {Array.isArray(selectedAiden.pours) && (selectedAiden.pours as Pour[]).map((pour) => (
                   <div key={pour.sequence} className="flex items-center justify-between">
                     <span className="text-stone-500 text-xs w-14 shrink-0">Pulse {pour.sequence}</span>
                     <div className="text-right">
@@ -916,6 +544,7 @@ function NewBrewPageContent() {
               </div>
             </div>
           )}
+
           {selectedAiden && (
             <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
               <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-1">Actual coffee used</p>
@@ -931,6 +560,7 @@ function NewBrewPageContent() {
               </div>
             </div>
           )}
+
           <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-1 text-sm">
             <p className="text-stone-400 font-medium mb-2">Brew summary</p>
             {selectedWater && <p className="text-stone-300"><span className="text-stone-500">Water:</span> {selectedWater.brand}{selectedWater.additives ? ` · ${selectedWater.additives}` : ""}</p>}
@@ -947,7 +577,7 @@ function NewBrewPageContent() {
             {selectedAiden && <p className="text-stone-300"><span className="text-stone-500">Profile:</span> {selectedAiden.name}</p>}
           </div>
 
-          {/* Freshness — editable only when no bag is selected */}
+          {/* Bean freshness */}
           {selectedBag ? (
             <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
               <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-2">Bean Freshness</p>
@@ -990,34 +620,28 @@ function NewBrewPageContent() {
           )}
 
           {/* Misc variables */}
-          {(miscVarOptions.length > 0 || true) && (
-            <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
-              <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Misc Variables <span className="text-stone-600 normal-case font-normal">(optional)</span></p>
-              <div className="flex flex-wrap gap-2">
-                {["used lid", ...miscVarOptions].map((v) => {
-                  const active = selectedMiscVars.includes(v);
-                  return (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() =>
-                        setSelectedMiscVars((prev) =>
-                          active ? prev.filter((x) => x !== v) : [...prev, v]
-                        )
-                      }
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                        active
-                          ? "bg-amber-600 border-amber-500 text-white"
-                          : "bg-stone-800 border-stone-700 text-stone-400 hover:border-amber-700 hover:text-stone-300"
-                      }`}
-                    >
-                      {v}
-                    </button>
-                  );
-                })}
-              </div>
+          <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
+            <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-3">Misc Variables <span className="text-stone-600 normal-case font-normal">(optional)</span></p>
+            <div className="flex flex-wrap gap-2">
+              {[...new Set(["used lid", ...miscVarOptions])].map((v) => {
+                const active = selectedMiscVars.includes(v);
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setSelectedMiscVars((prev) => active ? prev.filter((x) => x !== v) : [...prev, v])}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      active
+                        ? "bg-amber-600 border-amber-500 text-white"
+                        : "bg-stone-800 border-stone-700 text-stone-400 hover:border-amber-700 hover:text-stone-300"
+                    }`}
+                  >
+                    {v}
+                  </button>
+                );
+              })}
             </div>
-          )}
+          </div>
 
           <button disabled={!selectedAiden || submitting} onClick={submit}
             className="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors">

@@ -135,7 +135,9 @@ export default async function DashboardPage() {
           <p className="text-stone-500 text-[10px] tabular-nums text-right mt-0.5 bg-stone-950/80 rounded px-1.5 py-0.5">
             {process.env.NEXT_PUBLIC_COMMIT_SHA}
             {" · "}
-            {new Date(process.env.NEXT_PUBLIC_BUILD_TIME!).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+            {process.env.NEXT_PUBLIC_BUILD_TIME
+              ? new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+              : "—"}
           </p>
         </details>
       </div>

@@ -35,6 +35,7 @@ export async function POST() {
       tempF: b.aidenProfile.tempF,
       ratio: `${b.aidenProfile.waterG}g water / ${b.aidenProfile.coffeeG}g coffee`,
       bloomTime: b.aidenProfile.bloomTimeS,
+      issues: b.brewIssues.length > 0 ? b.brewIssues : undefined,
       tasting: b.tastingNote
         ? {
             overall: b.tastingNote.overallScore,
@@ -66,6 +67,11 @@ export async function POST() {
       )
     : null;
 
-  const insights = await generateInsights(brewData, outsideData ?? undefined);
-  return NextResponse.json({ insights });
+  try {
+    const insights = await generateInsights(brewData, outsideData ?? undefined);
+    return NextResponse.json({ insights });
+  } catch (err) {
+    console.error("Insights generation failed:", err);
+    return NextResponse.json({ insights: "Unable to generate insights right now. Please try again." });
+  }
 }

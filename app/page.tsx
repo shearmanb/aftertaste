@@ -17,122 +17,223 @@ async function getRecentBrews() {
   }
 }
 
-function ScoreDots({ score, max = 10 }: { score: number; max?: number }) {
+function formatScore(n: number): string {
+  if (Number.isInteger(n)) return String(n);
+  const oneDp = Math.round(n * 10) / 10;
+  if (Math.abs(oneDp - n) < 1e-9) return oneDp.toFixed(1);
+  return n.toFixed(2);
+}
+
+function scoreColor(score: number): string {
+  if (score >= 8) return "var(--accent-bright)";
+  if (score >= 7) return "var(--text-1)";
+  return "var(--text-2)";
+}
+
+function CupMark() {
   return (
-    <span className="text-amber-400 font-bold text-lg">{score}<span className="text-stone-500 text-sm">/{max}</span></span>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 8h12v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8Z" />
+      <path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17" />
+      <path d="M9 4c0 1 1 1.5 1 2.5M12 4c0 1 1 1.5 1 2.5" />
+    </svg>
   );
 }
+
+function PlusIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+function QAIcon({ d }: { d: string }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
+}
+
+const QA_ICONS: Record<string, string> = {
+  producers: "M4 20V8l8-4 8 4v12M9 20v-6h6v6",
+  beans: "M7 4c5 0 10 3 10 9s-5 7-10 7-4-5-4-8 0-8 4-8ZM9 6c2 2 2 10-2 12",
+  water: "M5 13c2-2 4-2 6 0s4 2 6 0M5 17c2-2 4-2 6 0s4 2 6 0M5 9c2-2 4-2 6 0s4 2 6 0",
+  filter: "M4 5h16l-6 8v6l-4-2v-4Z",
+  grind: "M12 4v3M12 17v3M4 12h3M17 12h3M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2",
+  recipe: "M5 4h10l4 4v12H5zM9 9h6M9 13h6M9 17h4",
+  stats: "M4 20V10M10 20V4M16 20v-7M22 20H2",
+  compare: "M7 7h12l-3-3M17 17H5l3 3",
+  control: "M4 7h16M4 12h10M4 17h16M16 10v4",
+};
 
 export default async function DashboardPage() {
   const recentBrews = await getRecentBrews();
   const unratedCount = recentBrews.filter((b) => !b.tastingNote).length;
 
+  const quickAccess = [
+    { href: "/producers", label: "Producers", icon: "producers" },
+    { href: "/beans", label: "Beans", icon: "beans" },
+    { href: "/profiles/water", label: "Water", icon: "water" },
+    { href: "/profiles/filter", label: "Filters", icon: "filter" },
+    { href: "/profiles/grind", label: "Grind", icon: "grind" },
+    { href: "/profiles/aiden", label: "Aiden", icon: "recipe" },
+    { href: "/stats", label: "Statistics", icon: "stats" },
+    { href: "/compare", label: "Compare", icon: "compare" },
+    { href: "/admin", label: "Control Panel", icon: "control" },
+  ];
+
   return (
     <AppShell>
-      <div className="flex items-center justify-between mb-6 pt-2">
-        <h1 className="text-2xl font-bold text-amber-400">Aftertaste</h1>
-        <Link
-          href="/brew/new"
-          className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xl w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors"
-          aria-label="Log new brew"
-        >
-          +
+      <header className="flex items-center justify-between pt-3 pb-1">
+        <div className="flex items-center gap-3">
+          <span className="at-mark"><CupMark /></span>
+          <span
+            className="text-[23px] font-extrabold"
+            style={{ letterSpacing: "-0.03em" }}
+          >
+            Aftertaste
+          </span>
+        </div>
+        <Link href="/brew/new" aria-label="Log new brew" className="at-add-btn">
+          <PlusIcon />
         </Link>
-      </div>
+      </header>
 
       {unratedCount > 0 && (
-        <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-4 mb-4">
-          <p className="text-amber-300 text-sm font-medium">
+        <div
+          className="mt-4 rounded-[14px] px-4 py-3"
+          style={{
+            background: "var(--accent-soft)",
+            border: "1px solid var(--accent-line)",
+          }}
+        >
+          <p className="text-sm font-medium" style={{ color: "var(--accent-bright)" }}>
             You have {unratedCount} unrated brew{unratedCount > 1 ? "s" : ""}.{" "}
             <Link href="/brews" className="underline">Rate now →</Link>
           </p>
         </div>
       )}
 
-      <section className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-stone-400 text-sm font-semibold uppercase tracking-wide">Recent Brews</h2>
-          <Link href="/brews" className="text-amber-500 text-sm hover:text-amber-400">See all</Link>
+      <section>
+        <div className="flex items-baseline justify-between mt-[30px] mx-[2px] mb-[13px]">
+          <span className="at-eyebrow">Recent Brews</span>
+          <Link href="/brews" className="at-link">See all</Link>
         </div>
 
         {recentBrews.length === 0 ? (
-          <div className="text-center py-12 text-stone-500">
+          <div
+            className="at-card text-center py-12"
+            style={{ color: "var(--text-3)" }}
+          >
             <p className="text-4xl mb-3">☕</p>
-            <p className="font-medium">No brews yet</p>
+            <p className="font-medium" style={{ color: "var(--text-2)" }}>No brews yet</p>
             <p className="text-sm mt-1">Tap + to log your first brew</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {recentBrews.map((brew) => (
-              <Link
-                key={brew.id}
-                href={`/brew/${brew.id}`}
-                className="block bg-stone-900 border border-stone-800 rounded-xl p-4 hover:border-stone-600 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-stone-100 truncate">
-                      {brew.bean.producer.name} — {brew.bean.name}
+          <div>
+            {recentBrews.map((brew) => {
+              const title = `${brew.bean.producer.name} — ${brew.bean.name}`;
+              const score = brew.tastingNote?.overallScore;
+              const flavorTag = brew.tastingNote?.flavorTags?.[0];
+              return (
+                <Link
+                  key={brew.id}
+                  href={`/brew/${brew.id}`}
+                  className="at-card at-press flex items-stretch justify-between mb-[11px] px-[18px] py-4"
+                >
+                  <div className="min-w-0 flex flex-col gap-[7px]">
+                    <p
+                      className="text-[16px] font-bold leading-tight truncate"
+                      style={{ letterSpacing: "-0.01em", color: "var(--text-1)" }}
+                    >
+                      {title}
                     </p>
-                    <p className="text-stone-500 text-sm mt-0.5">
-                      {formatDistanceToNow(new Date(brew.brewedAt), { addSuffix: true })}
-                    </p>
+                    <div className="flex items-center gap-[9px]">
+                      <span
+                        className="font-mono-plex text-[11.5px]"
+                        style={{ color: "var(--text-3)", letterSpacing: "0.02em" }}
+                      >
+                        {formatDistanceToNow(new Date(brew.brewedAt), { addSuffix: true })}
+                      </span>
+                      {flavorTag && <span className="at-tag">{flavorTag}</span>}
+                    </div>
                   </div>
-                  <div className="ml-3 shrink-0">
-                    {brew.tastingNote ? (
-                      <ScoreDots score={brew.tastingNote.overallScore} />
+                  <div className="ml-3 shrink-0 flex flex-col items-end justify-between">
+                    {typeof score === "number" ? (
+                      <>
+                        <div className="flex items-baseline gap-1">
+                          <span
+                            className="font-mono-plex text-[26px] font-semibold leading-none"
+                            style={{ color: scoreColor(score) }}
+                          >
+                            {formatScore(score)}
+                          </span>
+                          <span
+                            className="font-mono-plex text-[12px]"
+                            style={{ color: "var(--text-3)" }}
+                          >
+                            /10
+                          </span>
+                        </div>
+                        <div className="at-score-meter mt-2">
+                          <span style={{ width: `${Math.min(100, (score / 10) * 100)}%` }} />
+                        </div>
+                      </>
                     ) : (
-                      <span className="text-stone-600 text-sm italic">unrated</span>
+                      <span className="at-tag neutral">unrated</span>
                     )}
                   </div>
-                </div>
-                {brew.tastingNote?.flavorTags && brew.tastingNote.flavorTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {brew.tastingNote.flavorTags.slice(0, 4).map((tag) => (
-                      <span key={tag} className="bg-stone-800 text-stone-400 text-xs px-2 py-0.5 rounded-full">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>
 
       <section>
-        <h2 className="text-stone-400 text-sm font-semibold uppercase tracking-wide mb-3">Quick Access</h2>
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { href: "/producers", label: "Producers", icon: "◈" },
-            { href: "/beans", label: "Beans", icon: "◉" },
-            { href: "/profiles/water", label: "Water", icon: "≋" },
-            { href: "/profiles/filter", label: "Filters", icon: "▽" },
-            { href: "/profiles/grind", label: "Grind Profiles", icon: "⚙" },
-            { href: "/profiles/aiden", label: "Aiden Profiles", icon: "⊕" },
-            { href: "/stats", label: "Statistics", icon: "▲" },
-            { href: "/compare", label: "Compare", icon: "⇌" },
-            { href: "/admin", label: "Control Panel", icon: "⚒" },
-          ].map((item) => (
+        <div className="flex items-baseline justify-between mt-[30px] mx-[2px] mb-[13px]">
+          <span className="at-eyebrow">Quick Access</span>
+        </div>
+        <div className="grid grid-cols-2 gap-[11px]">
+          {quickAccess.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="bg-stone-900 border border-stone-800 rounded-xl p-4 hover:border-stone-600 transition-colors flex items-center gap-3"
+              className="at-card at-press flex items-center gap-3 p-[15px]"
             >
-              <span className="text-amber-500 text-xl">{item.icon}</span>
-              <span className="text-stone-300 text-sm font-medium">{item.label}</span>
+              <span className="at-qa-icon">
+                <QAIcon d={QA_ICONS[item.icon]} />
+              </span>
+              <span
+                className="text-[13.5px] font-semibold"
+                style={{ letterSpacing: "-0.01em", color: "var(--text-1)" }}
+              >
+                {item.label}
+              </span>
             </Link>
           ))}
         </div>
       </section>
 
-      <div className="fixed bottom-20 right-3 z-10">
+      <div className="fixed bottom-24 right-3 z-10">
         <details className="group">
           <summary className="list-none cursor-pointer text-right">
-            <span className="text-stone-500 text-base hover:text-stone-300 transition-colors select-none">·</span>
+            <span
+              className="text-base select-none"
+              style={{ color: "var(--text-3)" }}
+            >
+              ·
+            </span>
           </summary>
-          <p className="text-stone-500 text-[10px] tabular-nums text-right mt-0.5 bg-stone-950/80 rounded px-1.5 py-0.5">
+          <p
+            className="font-mono-plex text-[10px] text-right mt-0.5 rounded px-1.5 py-0.5"
+            style={{
+              color: "var(--text-3)",
+              background: "oklch(0.10 0.004 58 / 0.8)",
+            }}
+          >
             {process.env.NEXT_PUBLIC_COMMIT_SHA}
             {" · "}
             {process.env.NEXT_PUBLIC_BUILD_TIME

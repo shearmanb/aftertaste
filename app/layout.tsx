@@ -1,8 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Manrope, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-manrope",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-plex-mono",
+});
 
 export const metadata: Metadata = {
   title: "Aftertaste",
@@ -16,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1c0a00",
+  themeColor: "#1e1a16",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -24,8 +34,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geist.variable} h-full`}>
-      <body className="min-h-full bg-stone-950 text-stone-100 font-sans antialiased">
+    <html lang="en" className={`${manrope.variable} ${plexMono.variable} h-full`}>
+      <body className="min-h-full antialiased">
         {children}
       </body>
     </html>

@@ -15,12 +15,8 @@ export default function DeleteBrewButton({ brewId }: { brewId: string }) {
   }
 
   return (
-    <button
-      onClick={deleteBrew}
-      disabled={loading}
-      className="w-full py-3 bg-stone-900 hover:bg-red-950 border border-stone-800 hover:border-red-900 disabled:opacity-50 text-stone-500 hover:text-red-400 font-medium rounded-xl transition-colors text-sm"
-    >
-      {loading ? "Deleting..." : "Delete brew"}
+    <button onClick={deleteBrew} disabled={loading} className="at-cta-ghost" style={{ color: "var(--text-3)" }}>
+      {loading ? "Deleting…" : "Delete brew"}
     </button>
   );
 }

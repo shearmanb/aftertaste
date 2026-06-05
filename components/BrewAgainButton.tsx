@@ -27,12 +27,8 @@ export default function BrewAgainButton({ brewId }: { brewId: string }) {
   }
 
   return (
-    <button
-      onClick={brewAgain}
-      disabled={loading}
-      className="w-full py-3 bg-stone-800 hover:bg-stone-700 disabled:opacity-50 text-stone-300 font-medium rounded-xl transition-colors"
-    >
-      {loading ? "Creating..." : "Brew again with same settings"}
+    <button onClick={brewAgain} disabled={loading} className="at-cta">
+      {loading ? "Creating…" : "Brew again with same settings"}
     </button>
   );
 }

@@ -185,6 +185,12 @@ export default async function BrewDetailPage({ params }: { params: Promise<{ id:
               <FlavorBar label="Chocolate" value={tn.chocolate} />
               <StrengthFlavorBar value={tn.strength} />
               <FlavorBar label="Sourness" value={tn.sourness} cool />
+              {(tn as any).clarity != null && (
+                <FlavorBar label="Clarity" value={(tn as any).clarity} />
+              )}
+              {(tn as any).body != null && (
+                <FlavorBar label="Body" value={(tn as any).body} />
+              )}
               {(tn as any).grindAroma != null && (
                 <FlavorBar label="Grind Aroma" value={(tn as any).grindAroma} />
               )}

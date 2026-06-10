@@ -21,7 +21,7 @@ type BrewData = {
     confirmedTags: string[]; missedTags: string[]; bonusTags: string[]; flavorTags: string[];
     initialThoughts?: string | null; bestPart?: string | null;
     worstPart?: string | null; changesToMake?: string | null; wouldBrewAgain: boolean;
-    grindAroma?: number | null;
+    grindAroma?: number | null; clarity?: number | null; body?: number | null;
   } | null;
 };
 
@@ -39,7 +39,9 @@ export default function TastePage() {
   const [fruit, setFruit] = useState(2.5);
   const [strength, setStrength] = useState(0); // signed position: -10=too weak, 0=perfect, +10=too strong
   const [chocolate, setChocolate] = useState(2.5);
-  const [sourness, setSourness] = useState(1);
+  const [sourness, setSourness] = useState(0);
+  const [clarity, setClarity] = useState(2.5);
+  const [body, setBody] = useState(2.5);
   const [grindAroma, setGrindAroma] = useState<number | null>(null);
   // 0 = unrated, 1 = tasted ✓, 2 = missed ✗
   const [bagTagStates, setBagTagStates] = useState<Record<string, 0 | 1 | 2>>({});
@@ -87,6 +89,8 @@ export default function TastePage() {
         setStrength(Number.isInteger(tn.strength) ? tn.strength : 0);
         setChocolate(tn.chocolate);
         setSourness(tn.sourness);
+        if (tn.clarity != null) setClarity(tn.clarity);
+        if (tn.body != null) setBody(tn.body);
         setInitialThoughts(tn.initialThoughts ?? "");
         setBestPart(tn.bestPart ?? "");
         setWorstPart(tn.worstPart ?? "");
@@ -143,7 +147,7 @@ export default function TastePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          overallScore, fruit, strength, chocolate, sourness,
+          overallScore, fruit, strength, chocolate, sourness, clarity, body,
           ...(grindAroma !== null ? { grindAroma } : {}),
           confirmedTags, missedTags, bonusTags,
           flavorTags: [...confirmedTags, ...bonusTags],
@@ -196,7 +200,9 @@ export default function TastePage() {
           <TastingSlider label="Fruit" value={fruit} min={0} onChange={setFruit} lowLabel="None" highLabel="Tons" />
           <TastingSlider label="Chocolate / Roastness" value={chocolate} min={0} onChange={setChocolate} lowLabel="None" highLabel="Rich" />
           <TastingSlider label="Strength" value={strength} onChange={setStrength} symmetric />
-          <TastingSlider label="Sourness / Off-flavors" value={sourness} onChange={setSourness} lowLabel="None" highLabel="Sharp" />
+          <TastingSlider label="Sourness / Off-flavors" value={sourness} min={0} onChange={setSourness} lowLabel="None" highLabel="Sharp" />
+          <TastingSlider label="Clarity" value={clarity} min={0} onChange={setClarity} lowLabel="Muddy" highLabel="Clean" />
+          <TastingSlider label="Body / Mouthfeel" value={body} min={0} onChange={setBody} lowLabel="Light" highLabel="Syrupy" />
           <div>
             <div className="flex items-center justify-between mb-1">
               <span className="text-stone-300 text-sm font-medium">Grind Aroma</span>

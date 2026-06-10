@@ -20,6 +20,7 @@ You will be given a JSON log of their home brew history (including beans, grind 
 Analyze the data and provide 3-6 specific, actionable insights about patterns you observe.
 Focus on: correlations between settings and scores, producer/bean patterns, grind size trends, temperature effects, and if outside cups are provided, how home brews compare to café experiences.
 The "strength" field is a slider from -10 (too weak) to +10 (too strong), with 0 meaning perfect.
+The "sourness", "clarity", and "body" fields are 0-5 scales (sourness: none→sharp/off-flavors; clarity: muddy→clean; body: light→syrupy). Clarity and body may be null for older brews logged before those dimensions existed.
 Be concise and specific — cite actual numbers from the data when possible.
 Format your response as a bulleted list of insights.`,
         cache_control: { type: "ephemeral" },

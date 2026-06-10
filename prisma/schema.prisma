@@ -127,6 +127,8 @@ model TastingNote {
   strength        Float
   chocolate       Float
   sourness        Float
+  clarity         Float?
+  body            Float?
   grindAroma      Float?
   drinkingTempF   Int?
   flavorTags      String[]

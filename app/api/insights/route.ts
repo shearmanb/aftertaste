@@ -43,6 +43,8 @@ export async function POST() {
             strength: b.tastingNote.strength,
             chocolate: b.tastingNote.chocolate,
             sourness: b.tastingNote.sourness,
+            clarity: b.tastingNote.clarity,
+            body: b.tastingNote.body,
             tags: b.tastingNote.flavorTags,
             notes: b.tastingNote.initialThoughts,
           }

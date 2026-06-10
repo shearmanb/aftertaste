@@ -10,6 +10,8 @@ type TN = {
   strength: number;
   chocolate: number;
   sourness: number;
+  clarity?: number | null;
+  body?: number | null;
   flavorTags: string[];
   wouldBrewAgain: boolean;
 };
@@ -23,12 +25,14 @@ type Brew = {
   tastingNote: TN | null;
 };
 
-// Radar chart: 5 axes normalised to 0–1
+// Radar chart: axes normalised to 0–1
 const AXES = [
   { label: "Overall", fn: (n: TN) => n.overallScore / 10 },
   { label: "Fruit",   fn: (n: TN) => n.fruit / 5 },
   { label: "Choc.",   fn: (n: TN) => n.chocolate / 5 },
   { label: "Sour.",   fn: (n: TN) => n.sourness / 5 },
+  { label: "Clar.",   fn: (n: TN) => (n.clarity ?? 0) / 5 },
+  { label: "Body",    fn: (n: TN) => (n.body ?? 0) / 5 },
   { label: "Strength", fn: (n: TN) => (10 - Math.abs(n.strength)) / 10 },
 ];
 const N = AXES.length;
@@ -295,6 +299,18 @@ export default function ComparePage() {
                   a={String(tn_a.sourness)}
                   b={String(tn_b.sourness)}
                   win={winOf(tn_a.sourness, tn_b.sourness)}
+                />
+                <Row
+                  label="Clarity"
+                  a={tn_a.clarity != null ? String(tn_a.clarity) : "—"}
+                  b={tn_b.clarity != null ? String(tn_b.clarity) : "—"}
+                  win={winOf(tn_a.clarity ?? 0, tn_b.clarity ?? 0)}
+                />
+                <Row
+                  label="Body"
+                  a={tn_a.body != null ? String(tn_a.body) : "—"}
+                  b={tn_b.body != null ? String(tn_b.body) : "—"}
+                  win={winOf(tn_a.body ?? 0, tn_b.body ?? 0)}
                 />
                 <Row
                   label="Strength"

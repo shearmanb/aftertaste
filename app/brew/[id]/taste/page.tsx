@@ -182,9 +182,17 @@ export default function TastePage() {
         {/* Overall score */}
         <div className="bg-stone-900 border border-stone-800 rounded-xl p-5">
           <p className="text-stone-400 text-xs font-semibold uppercase tracking-wide mb-4">Overall Score</p>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-5xl font-bold text-amber-400">{scoreDisplay}</span>
-            <span className="text-stone-500">/10</span>
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <button type="button" aria-label="Lower score by 0.25"
+              onClick={() => setOverallScore((v) => Math.max(1, +(v - 0.25).toFixed(2)))}
+              className="w-12 h-12 shrink-0 rounded-xl bg-stone-800 border border-stone-700 text-amber-400 text-3xl leading-none font-bold flex items-center justify-center hover:border-amber-600 active:bg-stone-700 transition-colors">−</button>
+            <div className="flex items-baseline gap-1">
+              <span className="text-5xl font-bold text-amber-400">{scoreDisplay}</span>
+              <span className="text-stone-500">/10</span>
+            </div>
+            <button type="button" aria-label="Raise score by 0.25"
+              onClick={() => setOverallScore((v) => Math.min(10, +(v + 0.25).toFixed(2)))}
+              className="w-12 h-12 shrink-0 rounded-xl bg-stone-800 border border-stone-700 text-amber-400 text-3xl leading-none font-bold flex items-center justify-center hover:border-amber-600 active:bg-stone-700 transition-colors">+</button>
           </div>
           <input type="range" min={1} max={10} step={0.25} value={overallScore}
             onChange={(e) => setOverallScore(parseFloat(e.target.value))}

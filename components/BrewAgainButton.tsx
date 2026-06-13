@@ -15,7 +15,11 @@ export default function BrewAgainButton({ brewId }: { brewId: string }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        beanId: original.beanId,
+        // When the original brew came from a bag, send the bag so the server
+        // re-derives the bean and auto-assigns the next bag brew index
+        // (bag._count.brews + 1). Omitting bagBrewIndex lets the server pick it.
+        beanId: original.beanBagId ? undefined : original.beanId,
+        beanBagId: original.beanBagId ?? undefined,
         waterProfileId: original.waterProfileId,
         filterProfileId: original.filterProfileId,
         grindProfileId: original.grindProfileId,
